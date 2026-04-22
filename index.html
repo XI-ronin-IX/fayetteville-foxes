@@ -258,7 +258,7 @@
   }
   @media(max-width:1280px){.hero-mark{width:360px;right:24px;top:84px;}.hero-mark .crest img{width:360px;}}
   @media(max-width:1100px){.hero-mark{width:300px;right:20px;top:80px;}.hero-mark .crest img{width:300px;}}
-  @media(max-width:820px){.hero-mark{position:relative;right:auto;top:auto;width:320px;margin:0 auto 28px;}.hero-mark .crest img{width:320px;}}
+  @media(max-width:820px){.hero-mark{position:relative;right:auto;top:auto;width:320px;margin:40px auto 28px;}.hero-mark .crest img{width:320px;}}
 
   /* ───────── SCORE TICKER ───────── */
   .ticker{
@@ -612,6 +612,35 @@
     color:var(--orange);
   }
   .stats-row.stats-head > .pts{color:var(--orange);font-size:10px;font-weight:700;}
+
+  /* Mobile stats: hide low-value columns and tighten grid to reduce horizontal scrolling */
+  @media(max-width:720px){
+    .stats-row{
+      padding:12px 14px;
+      grid-template-columns:32px minmax(100px, 1fr) repeat(4, 36px);
+      min-width:0;
+    }
+    .stats-row > .pn{font-size:18px;}
+    .stats-row.us{padding-left:12px;}
+    /* Skaters (9 cols → 6): hide PIM, PPG, GWG */
+    .stats-table.skaters .stats-row > :nth-child(n+7){display:none;}
+    /* Goalies (11 cols → 8): hide GS, SA, GA */
+    .stats-table.goalies .stats-row{
+      grid-template-columns:28px minmax(90px, 1fr) repeat(6, 30px);
+    }
+    .stats-table.goalies .stats-row > :nth-child(4),
+    .stats-table.goalies .stats-row > :nth-child(5),
+    .stats-table.goalies .stats-row > :nth-child(6){display:none;}
+    /* Standings (11 cols → 8): hide GF, GA, DIFF */
+    .stats-table.standings .stats-row{
+      grid-template-columns:28px minmax(100px, 1fr) repeat(6, 32px);
+    }
+    .stats-table.standings .stats-row > :nth-child(8),
+    .stats-table.standings .stats-row > :nth-child(9),
+    .stats-table.standings .stats-row > :nth-child(10){display:none;}
+    .stats-table.standings .stats-row > .pn{gap:6px; font-size:16px;}
+    .stats-row .team-logo{width:26px; height:22px;}
+  }
 
   /* ───────── COACHING STAFF ───────── */
   .coaches-head{
