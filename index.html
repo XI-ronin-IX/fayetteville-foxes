@@ -624,20 +624,25 @@
     .stats-row.us{padding-left:12px;}
     /* Skaters (9 cols → 6): hide PIM, PPG, GWG */
     .stats-table.skaters .stats-row > :nth-child(n+7){display:none;}
-    /* Goalies (11 cols → 8): hide GS, SA, GA */
+    /* Goalies (11 cols → 5): hide GS, SA, GA, W, L, T — keep #, Goalie, GP, GAA, SV% */
     .stats-table.goalies .stats-row{
-      grid-template-columns:28px minmax(90px, 1fr) repeat(6, 30px);
+      grid-template-columns:28px minmax(100px, 1fr) repeat(3, 40px);
     }
     .stats-table.goalies .stats-row > :nth-child(4),
     .stats-table.goalies .stats-row > :nth-child(5),
-    .stats-table.goalies .stats-row > :nth-child(6){display:none;}
-    /* Standings (11 cols → 8): hide GF, GA, DIFF */
+    .stats-table.goalies .stats-row > :nth-child(6),
+    .stats-table.goalies .stats-row > :nth-child(9),
+    .stats-table.goalies .stats-row > :nth-child(10),
+    .stats-table.goalies .stats-row > :nth-child(11){display:none;}
+    /* Standings (11 cols → 6): hide T, GF, GA, DIFF, STK — keep RK, Team, GP, W, L, PTS */
     .stats-table.standings .stats-row{
-      grid-template-columns:28px minmax(100px, 1fr) repeat(6, 32px);
+      grid-template-columns:28px minmax(100px, 1fr) repeat(4, 36px);
     }
+    .stats-table.standings .stats-row > :nth-child(6),
     .stats-table.standings .stats-row > :nth-child(8),
     .stats-table.standings .stats-row > :nth-child(9),
-    .stats-table.standings .stats-row > :nth-child(10){display:none;}
+    .stats-table.standings .stats-row > :nth-child(10),
+    .stats-table.standings .stats-row > :nth-child(11){display:none;}
     .stats-table.standings .stats-row > .pn{gap:6px; font-size:16px;}
     .stats-row .team-logo{width:26px; height:22px;}
   }
