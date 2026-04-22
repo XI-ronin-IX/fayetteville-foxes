@@ -627,6 +627,7 @@
     /* Goalies (11 cols → 5): hide GS, SA, GA, W, L, T — keep #, Goalie, GP, GAA, SV% */
     .stats-table.goalies .stats-row{
       grid-template-columns:28px minmax(100px, 1fr) repeat(3, 40px);
+      min-width:0;
     }
     .stats-table.goalies .stats-row > :nth-child(4),
     .stats-table.goalies .stats-row > :nth-child(5),
@@ -637,6 +638,7 @@
     /* Standings (11 cols → 6): hide T, GF, GA, DIFF, STK — keep RK, Team, GP, W, L, PTS */
     .stats-table.standings .stats-row{
       grid-template-columns:28px minmax(100px, 1fr) repeat(4, 36px);
+      min-width:0;
     }
     .stats-table.standings .stats-row > :nth-child(6),
     .stats-table.standings .stats-row > :nth-child(8),
