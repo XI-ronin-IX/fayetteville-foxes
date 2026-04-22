@@ -3,7 +3,7 @@
   "trailingSlash": false,
   "headers": [
     {
-      "source": "/(.*\\.(webp|avif|jpg|jpeg|png|svg|ico|woff2|woff|ttf))",
+      "source": "/:path*.:ext(webp|avif|jpg|jpeg|png|svg|ico|woff2|woff|ttf)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]
