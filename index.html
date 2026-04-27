@@ -53,6 +53,9 @@
   .wrap{max-width:1400px;margin:0 auto;padding:0 40px;}
   @media(max-width:720px){.wrap{padding:0 20px;}}
 
+  /* Leave room for the 64px sticky nav when jumping to in-page anchors. */
+  #team,#schedule,#roster,#stats,#standings,#scoring,#coaches,#gameday{scroll-margin-top:80px;}
+
   .display{
     font-family:'Saira Condensed',sans-serif;
     font-weight:900;
@@ -366,7 +369,7 @@
   .ticker-item .team{color:var(--bone);}
   .ticker-dot{width:4px;height:4px;background:var(--steel);border-radius:50%;}
   @keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-  @media(max-width:720px){.ticker-track{animation-duration:20s;}}
+  @media(max-width:720px){.ticker-track{animation-duration:14s;}}
 
   /* ───────── IDENTITY / ESSENCE ───────── */
   .section{padding:120px 0;border-bottom:1px solid var(--line);position:relative;}
@@ -485,7 +488,13 @@
     transition:background .2s ease;
   }
   .sched-row:hover{background:rgba(255,85,0,0.035);}
-  @media(max-width:820px){.sched-row{grid-template-columns:auto auto 1fr auto;gap:14px;padding:18px 6px;}.sched-row .result{display:none;}}
+  @media(max-width:820px){
+    .sched-row{grid-template-columns:auto auto 1fr auto;gap:14px;padding:18px 6px;}
+    /* Upcoming/featured rows: show the time, hide the "Upcoming" / "Next Up" badge */
+    .sched-row.upcoming .result{display:none;}
+    /* Past rows: time is just "—", swap in the W/L + score instead */
+    .sched-row:not(.upcoming) .time{display:none;}
+  }
   .sched-row .date{
     font-family:'Saira Condensed',sans-serif;font-weight:900;font-style:italic;
     font-size:26px;color:var(--bone);line-height:1;
@@ -721,12 +730,11 @@
     .stats-table.goalies .stats-row > :nth-child(9),
     .stats-table.goalies .stats-row > :nth-child(10),
     .stats-table.goalies .stats-row > :nth-child(11){display:none;}
-    /* Standings (11 cols → 6): hide T, GF, GA, DIFF, STK — keep RK, Team, GP, W, L, PTS */
+    /* Standings (11 cols → 7): hide GF, GA, DIFF, STK — keep RK, Team, GP, W, L, T, PTS */
     .stats-table.standings .stats-row{
-      grid-template-columns:28px minmax(100px, 1fr) repeat(4, 36px);
+      grid-template-columns:26px minmax(85px, 1fr) repeat(5, 30px);
       min-width:0;
     }
-    .stats-table.standings .stats-row > :nth-child(6),
     .stats-table.standings .stats-row > :nth-child(8),
     .stats-table.standings .stats-row > :nth-child(9),
     .stats-table.standings .stats-row > :nth-child(10),
@@ -1070,7 +1078,7 @@
     <a class="mm-item" href="#roster">Roster</a>
     <a class="mm-item" href="#schedule">Schedule</a>
     <a class="mm-item" href="#standings">Standings</a>
-    <a class="mm-item" href="#stats">Stats</a>
+    <a class="mm-item" href="#scoring">Stats</a>
     <a class="mm-item" href="#coaches">Coaches</a>
     <a class="mm-item mm-ig" href="https://www.instagram.com/fayettevillehockey?igsh=bHljZHE4cDlheTRu" target="_blank" rel="noopener noreferrer">
       Instagram <em>@fayettevillehockey</em>
@@ -1112,7 +1120,7 @@
       </p>
       <div class="hero-stat">
         <span class="mono label">Season Record</span>
-        <span class="val">3<span class="sub">W</span> 1<span class="sub">L</span> 1<span class="sub">T</span></span>
+        <span class="val" data-foxes-record="hero">3<span class="sub">W</span> 2<span class="sub">L</span> 1<span class="sub">T</span></span>
       </div>
       <div class="hero-stat">
         <span class="mono label">League Standing</span>
@@ -1204,7 +1212,7 @@
         <div class="section-label">02 / Next Puck Drop</div>
         <h2 class="section-title display">Sunday morning. <em>Wear orange.</em></h2>
       </div>
-      <p class="section-lede">Warmups start at <b>06:45</b> — one hour before the <b>07:45</b> puck drop. After three periods we expect you to have lost your voice.</p>
+      <p class="section-lede">Warmups start at <b data-target="warmup-time">06:45</b> — one hour before the <b data-target="puckdrop-time">07:45</b> puck drop. After three periods we expect you to have lost your voice.</p>
     </div>
 
     <div class="matchup">
@@ -1215,7 +1223,7 @@
         </picture></span>
         <div class="place mono">Away · @ Orange County Sportsplex Rink 1</div>
         <div class="team-name">Fayetteville <em>Foxes</em></div>
-        <div class="record">3W · 2L · 1T</div>
+        <div class="record" data-foxes-record="dotted">3W · 2L · 1T</div>
       </div>
 
       <div class="matchup-vs">
@@ -1247,11 +1255,11 @@
         </div>
         <div class="cell">
           <span class="label mono">Puck Drop</span>
-          <span class="val"><em>07:45</em> Eastern</span>
+          <span class="val"><em data-meta="puckdrop-time">07:45</em> Eastern</span>
         </div>
         <div class="cell">
           <span class="label mono">Venue</span>
-          <span class="val">Orange County Sportsplex Rink 1</span>
+          <span class="val" data-meta="venue">Orange County Sportsplex Rink 1</span>
         </div>
         <div class="cell">
           <span class="label mono">Broadcast</span>
@@ -1329,7 +1337,7 @@
         <div class="section-label">03 / The Squad</div>
         <h2 class="section-title display">Names on <em>the back.</em></h2>
       </div>
-      <p class="section-lede">Twenty skaters, two tenders, one bench. The group that's <b>3-1-1 through five</b> and still climbing.</p>
+      <p class="section-lede">Twenty skaters, two tenders, one bench. The group that's <b><span data-foxes-record="dash">3-2-1</span> through <span data-foxes-gp-word>six</span></b> and still climbing.</p>
     </div>
 
     <div class="roster-grid">
@@ -1559,7 +1567,7 @@
     </div>
 
     <!-- Scoring Leaders -->
-    <div class="stats-subhead">Scoring Leaders</div>
+    <div class="stats-subhead" id="scoring">Scoring Leaders</div>
     <div class="stats-table skaters">
       <div class="stats-row stats-head">
         <span>#</span>
@@ -1674,11 +1682,11 @@
         </div>
         <div class="info-row">
           <span class="k mono">Warmups</span>
-          <span class="v"><em>20:45</em> ET · One hour before puck drop</span>
+          <span class="v"><em data-target="warmup-time">06:45</em> ET · One hour before puck drop</span>
         </div>
         <div class="info-row">
           <span class="k mono">Puck Drop</span>
-          <span class="v"><em>21:45</em> ET</span>
+          <span class="v"><em data-target="puckdrop-time">07:45</em> ET</span>
         </div>
         <div class="info-row">
           <span class="k mono">Admission</span>
@@ -1748,6 +1756,18 @@
     </div>
   </div>
 </footer>
+
+<!-- Directions app chooser (mobile bottom sheet) — must precede <script> so the
+     IIFE that wires it can find these IDs at parse time. -->
+<div class="dir-backdrop" id="dir-backdrop" hidden></div>
+<aside class="dir-sheet" id="dir-sheet" role="dialog" aria-modal="true" aria-labelledby="dir-title" hidden>
+  <div class="dir-head">
+    <span id="dir-title">Open Directions In</span>
+    <span class="dir-dest" id="dir-dest">—</span>
+  </div>
+  <div id="dir-options"></div>
+  <button type="button" class="dir-cancel" data-dir-close>Cancel</button>
+</aside>
 
 <script>
   // Elite Prospects URLs keyed by player name.
@@ -1960,6 +1980,20 @@
     const isAndroid = /Android/i.test(ua);
     const isMobile = isIOS || isAndroid;
 
+    // Append ?dirdebug to the URL to see how the device was detected.
+    if (/[?&]dirdebug\b/.test(location.search)) {
+      alert(
+        'Directions detection\n' +
+        '─────────────\n' +
+        'isIOS: ' + isIOS + '\n' +
+        'isAndroid: ' + isAndroid + '\n' +
+        'isMobile: ' + isMobile + '\n' +
+        'platform: ' + navigator.platform + '\n' +
+        'maxTouchPoints: ' + (navigator.maxTouchPoints || 0) + '\n' +
+        'UA: ' + ua
+      );
+    }
+
     const sheet     = document.getElementById('dir-sheet');
     const backdrop  = document.getElementById('dir-backdrop');
     const optionsEl = document.getElementById('dir-options');
@@ -2024,7 +2058,9 @@
     });
   })();
 
-  // Venue toggle: left/right or up/down arrows switch between the two venues.
+  // Venue toggle: left/right or up/down arrows switch between the venues.
+  // Initial card is auto-selected to match the matchup hero's "Venue" cell — when you
+  // update the next game's venue there, the Den's carousel opens to the same rink.
   (function(){
     const row = document.querySelector('.venue-row');
     if (!row) return;
@@ -2032,18 +2068,94 @@
     const pips = row.querySelectorAll('.venue-pip');
     const idxLabel = row.querySelector('.venue-idx');
     const slot = row.querySelector('.venue-slot');
+
+    // Map the canonical "next venue" string to a card index. Order matches DOM:
+    //   0 = Invisalign Arena, 1 = Orange County Sportsplex, 2 = Polar Ice Wake Forest
+    const nextVenueEl = document.querySelector('[data-meta="venue"]');
+    const nextVenueText = nextVenueEl ? nextVenueEl.textContent.trim() : '';
     let idx = 0;
+    if (/Orange County Sportsplex/i.test(nextVenueText)) idx = 1;
+    else if (/Polar Ice Wake Forest/i.test(nextVenueText)) idx = 2;
+    else if (/Invisalign/i.test(nextVenueText)) idx = 0;
+
     function show(i){
       idx = ((i % cards.length) + cards.length) % cards.length;
       cards.forEach((c, n) => { c.hidden = n !== idx; });
       pips.forEach((p, n) => { p.classList.toggle('active', n === idx); });
       if (idxLabel) idxLabel.textContent = String(idx + 1);
     }
+    show(idx);
     row.querySelectorAll('[data-dir="prev"]').forEach(b => b.addEventListener('click', () => show(idx - 1)));
     row.querySelectorAll('[data-dir="next"]').forEach(b => b.addEventListener('click', () => show(idx + 1)));
     slot.addEventListener('keydown', (e) => {
       if (e.key === 'ArrowLeft' || e.key === 'ArrowUp')   { e.preventDefault(); show(idx - 1); }
       else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); show(idx + 1); }
+    });
+  })();
+
+  // Sync warmup + puck-drop times from the matchup-meta source.
+  // Warmup is derived as puck-drop minus 1 hour. Targets:
+  //   - Schedule section lede ("Warmups start at 06:45 — one hour before the 07:45 puck drop")
+  //   - Den section Warmups + Puck Drop info rows
+  (function(){
+    const src = document.querySelector('[data-meta="puckdrop-time"]');
+    if (!src) return;
+    const puckText = src.textContent.trim();
+    const m = /^(\d{1,2}):(\d{2})$/.exec(puckText);
+    if (!m) return;
+    const hh = parseInt(m[1], 10);
+    const mm = m[2];
+    const warmH = (hh + 23) % 24;          // (hh - 1 + 24) mod 24
+    const warmText = String(warmH).padStart(2, '0') + ':' + mm;
+    const puckHH = String(hh).padStart(2, '0') + ':' + mm;
+
+    document.querySelectorAll('[data-target="puckdrop-time"]').forEach(el => {
+      el.textContent = puckHH;
+    });
+    document.querySelectorAll('[data-target="warmup-time"]').forEach(el => {
+      el.textContent = warmText;
+    });
+  })();
+
+  // Sync the Foxes record from the canonical standings row to every record display.
+  // Edit the standings table once and this JS pushes the new W/L/T to:
+  //   - Hero "Season Record" stat (top of page)
+  //   - Matchup hero Fayetteville record (schedule section)
+  //   - Roster section lede ("3-2-1 through six")
+  (function(){
+    const usRow = document.querySelector('.stats-row.us');
+    if (!usRow) return;
+    // Standings row layout: rank, team, GP, W, L, T, PTS, GF, GA, DIFF, STK
+    const cells = usRow.children;
+    const gp = parseInt(cells[2] && cells[2].textContent, 10);
+    const w  = parseInt(cells[3] && cells[3].textContent, 10);
+    const l  = parseInt(cells[4] && cells[4].textContent, 10);
+    const t  = parseInt(cells[5] && cells[5].textContent, 10);
+    if ([gp, w, l, t].some(Number.isNaN)) return;
+
+    const numWords = ['zero','one','two','three','four','five','six','seven','eight','nine',
+                      'ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen',
+                      'seventeen','eighteen','nineteen','twenty','twenty-one','twenty-two',
+                      'twenty-three','twenty-four','twenty-five','twenty-six','twenty-seven',
+                      'twenty-eight','twenty-nine','thirty'];
+    const gpWord = numWords[gp] || String(gp);
+
+    document.querySelectorAll('[data-foxes-record="hero"]').forEach(el => {
+      el.innerHTML = w + '<span class="sub">W</span> ' +
+                     l + '<span class="sub">L</span> ' +
+                     t + '<span class="sub">T</span>';
+    });
+    document.querySelectorAll('[data-foxes-record="dotted"]').forEach(el => {
+      el.textContent = w + 'W · ' + l + 'L · ' + t + 'T';
+    });
+    document.querySelectorAll('[data-foxes-record="dash"]').forEach(el => {
+      el.textContent = w + '-' + l + '-' + t;
+    });
+    document.querySelectorAll('[data-foxes-gp-word]').forEach(el => {
+      el.textContent = gpWord;
+    });
+    document.querySelectorAll('[data-foxes-gp]').forEach(el => {
+      el.textContent = String(gp);
     });
   })();
 
@@ -2075,17 +2187,6 @@
     });
   })();
 </script>
-
-<!-- Directions app chooser (mobile bottom sheet) -->
-<div class="dir-backdrop" id="dir-backdrop" hidden></div>
-<aside class="dir-sheet" id="dir-sheet" role="dialog" aria-modal="true" aria-labelledby="dir-title" hidden>
-  <div class="dir-head">
-    <span id="dir-title">Open Directions In</span>
-    <span class="dir-dest" id="dir-dest">—</span>
-  </div>
-  <div id="dir-options"></div>
-  <button type="button" class="dir-cancel" data-dir-close>Cancel</button>
-</aside>
 
 </body>
 </html>
