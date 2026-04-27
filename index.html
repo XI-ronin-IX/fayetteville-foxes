@@ -361,6 +361,9 @@
     display:flex;gap:56px;align-items:center;
     font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;
     white-space:nowrap;
+    /* width:max-content lets the track grow to its natural content width so
+       translateX(-50%) is half of all items, not half of viewport. */
+    width:max-content;
     animation:scroll 38s linear infinite;
   }
   .ticker-item{display:inline-flex;align-items:center;gap:14px;color:var(--smoke);}
