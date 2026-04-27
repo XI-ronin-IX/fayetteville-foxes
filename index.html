@@ -368,7 +368,10 @@
   .ticker-item .l{color:var(--smoke-2);font-weight:700;}
   .ticker-item .team{color:var(--bone);}
   .ticker-dot{width:4px;height:4px;background:var(--steel);border-radius:50%;}
-  @keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  /* The -28px adjustment is half of the 56px gap — it accounts for the connecting
+     gap between the original and duplicated sets so the loop point is seamless.
+     If you change the gap value, update both numbers (or set them to match). */
+  @keyframes scroll{from{transform:translateX(0)}to{transform:translateX(calc(-50% - 28px))}}
   @media(max-width:720px){.ticker-track{animation-duration:14s;}}
 
   /* ───────── IDENTITY / ESSENCE ───────── */
@@ -1104,8 +1107,8 @@
         <span>Combined Division</span>
       </div>
       <div class="hero-meta">
-        <div>Next Puck Drop <b>SAT • APR 25 • 21:45 ET</b></div>
-        <div>@ <b>Rolesville</b> · Invisalign Red Rink</div>
+        <div>Next Puck Drop <b data-target="hero-when">SUN • MAY 10 • 07:45 ET</b></div>
+        <div data-target="hero-where">@ <b>Pittsboro</b> · Orange County Sportsplex Rink 1</div>
       </div>
     </div>
 
@@ -1149,6 +1152,8 @@
 <!-- TICKER -->
 <div class="ticker" aria-hidden="true">
   <div class="ticker-track">
+    <span class="ticker-item"><span class="l">L</span> <span class="team">Foxes</span> 3 <span class="mono dim">—</span> 16 <span class="team">Rolesville</span> <span class="mono dim">Apr 25</span></span>
+    <span class="ticker-dot"></span>
     <span class="ticker-item"><span class="w">W</span> <span class="team">Foxes</span> 6 <span class="mono dim">—</span> 3 <span class="team">Chapel Hill</span> <span class="mono dim">Apr 19</span></span>
     <span class="ticker-dot"></span>
     <span class="ticker-item"><span class="l">L</span> <span class="team">Foxes</span> 6 <span class="mono dim">—</span> 10 <span class="team">Durham</span> <span class="mono dim">Apr 11</span></span>
@@ -1160,6 +1165,8 @@
     <span class="ticker-item"><span class="l">T</span> <span class="team">Foxes</span> 4 <span class="mono dim">—</span> 4 <span class="team">Greater Neuse</span> <span class="mono dim">Mar 14</span></span>
     <span class="ticker-dot"></span>
     <!-- duplicate for seamless loop -->
+    <span class="ticker-item"><span class="l">L</span> <span class="team">Foxes</span> 3 <span class="mono dim">—</span> 16 <span class="team">Rolesville</span> <span class="mono dim">Apr 25</span></span>
+    <span class="ticker-dot"></span>
     <span class="ticker-item"><span class="w">W</span> <span class="team">Foxes</span> 6 <span class="mono dim">—</span> 3 <span class="team">Chapel Hill</span> <span class="mono dim">Apr 19</span></span>
     <span class="ticker-dot"></span>
     <span class="ticker-item"><span class="l">L</span> <span class="team">Foxes</span> 6 <span class="mono dim">—</span> 10 <span class="team">Durham</span> <span class="mono dim">Apr 11</span></span>
@@ -1251,7 +1258,7 @@
       <div class="matchup-meta" style="grid-column:1 / -1;">
         <div class="cell">
           <span class="label mono">Date</span>
-          <span class="val">Sun · May 10 · 2026</span>
+          <span class="val" data-meta="date">Sun · May 10 · 2026</span>
         </div>
         <div class="cell">
           <span class="label mono">Puck Drop</span>
@@ -2091,6 +2098,35 @@
       if (e.key === 'ArrowLeft' || e.key === 'ArrowUp')   { e.preventDefault(); show(idx - 1); }
       else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); show(idx + 1); }
     });
+  })();
+
+  // Sync the hero "Next Puck Drop" banner with the matchup-meta source plus the
+  // featured schedule row's opponent label. Edit the next-game cells in the schedule
+  // section and this banner at the top of the page follows.
+  (function(){
+    const dateEl  = document.querySelector('[data-meta="date"]');
+    const timeEl  = document.querySelector('[data-meta="puckdrop-time"]');
+    const venueEl = document.querySelector('[data-meta="venue"]');
+    const oppEl   = document.querySelector('.sched-row.featured .opp em');
+    const whenTarget  = document.querySelector('[data-target="hero-when"]');
+    const whereTarget = document.querySelector('[data-target="hero-where"]');
+    if (!dateEl || !timeEl || !venueEl || !oppEl || !whenTarget || !whereTarget) return;
+
+    // Date is "Sun · May 10 · 2026" — split on "·" and take day-of-week + month/day.
+    const parts = dateEl.textContent.split('·').map(s => s.trim());
+    if (parts.length < 2) return;
+    const day = parts[0].toUpperCase();
+    const monthDay = parts[1].toUpperCase();
+    const time = timeEl.textContent.trim();
+    whenTarget.textContent = day + ' • ' + monthDay + ' • ' + time + ' ET';
+
+    // Opp text is "@ Pittsboro" or "vs Chapel Hill". Preserve the prefix and bold the team.
+    const oppText = oppEl.textContent.trim();
+    const m = /^(@|vs)\s+(.+)$/.exec(oppText);
+    const prefix = m ? m[1] : '';
+    const team   = m ? m[2] : oppText;
+    const venue  = venueEl.textContent.trim();
+    whereTarget.innerHTML = prefix + ' <b>' + team + '</b> · ' + venue;
   })();
 
   // Sync warmup + puck-drop times from the matchup-meta source.
