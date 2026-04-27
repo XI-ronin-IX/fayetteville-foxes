@@ -122,9 +122,94 @@
   .nav-cta:hover{background:var(--orange-glow);}
   .nav-cta:active{transform:translateY(1px);}
   .nav-cta .dot{width:7px;height:7px;background:var(--black);border-radius:50%;animation:pulse 1.8s ease-in-out infinite;}
+  .nav-cta .cta-short{display:none;}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
 
-  @media(max-width:720px){.nav-links{display:none;}}
+  /* Right-side cluster: hamburger + tickets on mobile, just tickets on desktop */
+  .nav-actions{display:flex;align-items:center;gap:10px;}
+
+  /* Hamburger button — hidden on desktop, shown ≤720px */
+  .nav-hamburger{
+    display:none;
+    width:38px;height:38px;padding:0;
+    background:transparent;border:1px solid var(--line);
+    position:relative;cursor:pointer;
+    transition:border-color .2s cubic-bezier(.2,.7,.2,1), background .2s ease;
+  }
+  .nav-hamburger:hover,.nav-hamburger:focus-visible{
+    border-color:var(--orange);background:rgba(255,85,0,0.08);outline:none;
+  }
+  .nav-hamburger span{
+    position:absolute;left:9px;width:20px;height:2px;background:var(--bone);
+    transition:transform .25s cubic-bezier(.2,.7,.2,1), opacity .18s ease, top .25s cubic-bezier(.2,.7,.2,1), background .2s ease;
+  }
+  .nav-hamburger span:nth-child(1){top:11px;}
+  .nav-hamburger span:nth-child(2){top:18px;}
+  .nav-hamburger span:nth-child(3){top:25px;}
+  .nav-hamburger[aria-expanded="true"] span{background:var(--orange);}
+  .nav-hamburger[aria-expanded="true"] span:nth-child(1){top:18px;transform:rotate(45deg);}
+  .nav-hamburger[aria-expanded="true"] span:nth-child(2){opacity:0;}
+  .nav-hamburger[aria-expanded="true"] span:nth-child(3){top:18px;transform:rotate(-45deg);}
+
+  /* Dropdown — desktop hides it entirely; mobile reveals when .is-open */
+  .mobile-menu{display:none;}
+  .mobile-menu .mm-item{
+    display:flex;align-items:center;gap:14px;
+    padding:16px 24px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;letter-spacing:0.18em;text-transform:uppercase;
+    color:var(--bone);
+    border-bottom:1px solid var(--line);
+    transition:background .15s ease, color .15s ease, padding-left .2s cubic-bezier(.2,.7,.2,1);
+  }
+  .mobile-menu .mm-item:last-child{border-bottom:none;}
+  .mobile-menu .mm-item::before{
+    content:"";width:6px;height:6px;background:transparent;
+    flex-shrink:0;
+    transition:background .15s ease;
+  }
+  .mobile-menu .mm-item:hover,
+  .mobile-menu .mm-item:focus-visible{
+    background:rgba(255,85,0,0.06);color:var(--orange);
+    outline:none;padding-left:30px;
+  }
+  .mobile-menu .mm-item:hover::before,
+  .mobile-menu .mm-item:focus-visible::before{background:var(--orange);}
+  .mobile-menu .mm-item:active{background:rgba(255,85,0,0.12);}
+  .mobile-menu .mm-ig em{
+    font-style:normal;color:var(--smoke);
+    font-size:10px;letter-spacing:0.1em;
+    margin-left:8px;text-transform:none;
+  }
+  .mobile-menu .mm-ig svg{
+    width:22px;height:22px;
+    fill:none;stroke:currentColor;stroke-width:1.6;
+    margin-left:auto;flex-shrink:0;
+  }
+  @keyframes dropdown{
+    from{opacity:0;transform:translateY(-8px);}
+    to{opacity:1;transform:translateY(0);}
+  }
+
+  @media(max-width:720px){
+    .nav-links{display:none;}
+    .nav-hamburger{display:inline-block;}
+    .nav-brand .name{font-size:17px;}
+    .nav-brand{gap:10px;}
+    .nav-cta{padding:8px 11px;font-size:10px;letter-spacing:0.12em;gap:8px;}
+    .nav-cta .dot{width:6px;height:6px;}
+    .nav-cta .cta-full{display:none;}
+    .nav-cta .cta-short{display:inline;}
+    .mobile-menu.is-open{
+      display:block;
+      background:rgba(10,10,10,0.94);
+      backdrop-filter:blur(12px);
+      -webkit-backdrop-filter:blur(12px);
+      border-top:1px solid var(--line);
+      border-bottom:1px solid var(--line-strong);
+      animation:dropdown 0.22s cubic-bezier(.2,.7,.2,1) both;
+    }
+  }
 
   /* ───────── HERO ───────── */
   .hero{
@@ -281,6 +366,7 @@
   .ticker-item .team{color:var(--bone);}
   .ticker-dot{width:4px;height:4px;background:var(--steel);border-radius:50%;}
   @keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  @media(max-width:720px){.ticker-track{animation-duration:20s;}}
 
   /* ───────── IDENTITY / ESSENCE ───────── */
   .section{padding:120px 0;border-bottom:1px solid var(--line);position:relative;}
@@ -880,6 +966,74 @@
     .rise-1{animation-delay:.05s}.rise-2{animation-delay:.18s}.rise-3{animation-delay:.32s}.rise-4{animation-delay:.46s}.rise-5{animation-delay:.6s}.rise-6{animation-delay:.74s}
     @keyframes rise{to{opacity:1;transform:translateY(0);}}
   }
+
+  /* ───────── DIRECTIONS APP CHOOSER (mobile bottom sheet) ───────── */
+  .dir-backdrop{
+    position:fixed;inset:0;z-index:100;
+    background:rgba(0,0,0,0.65);
+    backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    animation:dirFade .2s ease both;
+  }
+  .dir-sheet{
+    position:fixed;left:0;right:0;bottom:0;z-index:101;
+    background:rgba(14,14,14,0.98);
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    border-top:1px solid var(--orange);
+    padding-bottom:max(8px, env(safe-area-inset-bottom));
+    box-shadow:0 -16px 40px rgba(0,0,0,0.6), 0 -2px 0 rgba(255,85,0,0.45);
+    animation:dirSlide .26s cubic-bezier(.2,.7,.2,1) both;
+  }
+  .dir-sheet[hidden],.dir-backdrop[hidden]{display:none;}
+  .dir-head{
+    display:flex;justify-content:space-between;align-items:center;gap:14px;
+    padding:14px 24px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;letter-spacing:0.2em;text-transform:uppercase;
+    color:var(--smoke);
+    border-bottom:1px solid var(--line);
+  }
+  .dir-head .dir-dest{
+    color:var(--orange);max-width:62%;text-align:right;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    text-transform:none;letter-spacing:0.04em;font-size:11px;
+  }
+  .dir-option{
+    display:flex;align-items:center;justify-content:space-between;
+    width:100%;
+    padding:18px 24px;
+    background:transparent;border:none;border-bottom:1px solid var(--line);
+    color:var(--bone);
+    font-family:'Saira Condensed',sans-serif;font-weight:900;font-style:italic;
+    font-size:22px;letter-spacing:-0.005em;text-align:left;
+    cursor:pointer;
+    transition:background .15s ease, padding-left .2s cubic-bezier(.2,.7,.2,1), color .15s ease;
+  }
+  .dir-option:hover,.dir-option:focus-visible{
+    background:rgba(255,85,0,0.06);color:var(--orange);
+    outline:none;padding-left:30px;
+  }
+  .dir-option:active{background:rgba(255,85,0,0.12);}
+  .dir-option .arrow{
+    font-family:'JetBrains Mono',monospace;font-style:normal;
+    font-size:18px;color:var(--orange);
+    transition:transform .2s cubic-bezier(.2,.7,.2,1);
+  }
+  .dir-option:hover .arrow,.dir-option:focus-visible .arrow{transform:translateX(4px);}
+  .dir-cancel{
+    display:block;width:100%;
+    padding:16px;background:transparent;border:none;
+    color:var(--smoke);
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;letter-spacing:0.2em;text-transform:uppercase;
+    cursor:pointer;
+    transition:color .15s ease;
+  }
+  .dir-cancel:hover,.dir-cancel:focus-visible{color:var(--bone);outline:none;}
+  @keyframes dirFade{from{opacity:0}to{opacity:1}}
+  @keyframes dirSlide{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  @media(prefers-reduced-motion: reduce){
+    .dir-backdrop,.dir-sheet{animation:none;}
+  }
 </style>
 </head>
 <body>
@@ -901,8 +1055,32 @@
       <a href="#stats">Stats</a>
       <a href="#gameday">Gameday</a>
     </nav>
-    <a href="https://www.eventbrite.com/o/triangle-high-school-hockey-league-80586603933" target="_blank" rel="noopener noreferrer" class="nav-cta"><span class="dot"></span>Get Tickets Here</a>
+    <div class="nav-actions">
+      <button type="button" class="nav-hamburger" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobile-menu">
+        <span></span><span></span><span></span>
+      </button>
+      <a href="https://www.eventbrite.com/o/triangle-high-school-hockey-league-80586603933" target="_blank" rel="noopener noreferrer" class="nav-cta">
+        <span class="dot"></span>
+        <span class="cta-full">Get Tickets Here</span>
+        <span class="cta-short">Tickets</span>
+      </a>
+    </div>
   </div>
+  <nav class="mobile-menu" id="mobile-menu" aria-label="Mobile navigation">
+    <a class="mm-item" href="#roster">Roster</a>
+    <a class="mm-item" href="#schedule">Schedule</a>
+    <a class="mm-item" href="#standings">Standings</a>
+    <a class="mm-item" href="#stats">Stats</a>
+    <a class="mm-item" href="#coaches">Coaches</a>
+    <a class="mm-item mm-ig" href="https://www.instagram.com/fayettevillehockey?igsh=bHljZHE4cDlheTRu" target="_blank" rel="noopener noreferrer">
+      Instagram <em>@fayettevillehockey</em>
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <rect x="3" y="3" width="18" height="18" rx="5" ry="5"/>
+        <circle cx="12" cy="12" r="4"/>
+        <circle cx="17.5" cy="6.5" r="1.1" fill="currentColor" stroke="none"/>
+      </svg>
+    </a>
+  </nav>
 </header>
 
 <!-- HERO -->
@@ -1024,9 +1202,9 @@
     <div class="section-head">
       <div>
         <div class="section-label">02 / Next Puck Drop</div>
-        <h2 class="section-title display">Friday night. <em>Wear orange.</em></h2>
+        <h2 class="section-title display">Sunday morning. <em>Wear orange.</em></h2>
       </div>
-      <p class="section-lede">Warmups start at <b>20:45</b> — one hour before the <b>21:45</b> puck drop. After three periods we expect you to have lost your voice.</p>
+      <p class="section-lede">Warmups start at <b>06:45</b> — one hour before the <b>07:45</b> puck drop. After three periods we expect you to have lost your voice.</p>
     </div>
 
     <div class="matchup">
@@ -1035,45 +1213,45 @@
           <source type="image/webp" srcset="brand_assets/Fayetteville_Fox_Logo_BLK.webp">
           <img src="brand_assets/Fayetteville_Fox_Logo_BLK.png" alt="Fayetteville Foxes" loading="lazy" style="width:170px;height:auto;display:block;" />
         </picture></span>
-        <div class="place mono">Away · @ Invisalign Red Rink</div>
+        <div class="place mono">Away · @ Orange County Sportsplex Rink 1</div>
         <div class="team-name">Fayetteville <em>Foxes</em></div>
-        <div class="record">3W · 1L · 1T</div>
+        <div class="record">3W · 2L · 1T</div>
       </div>
 
       <div class="matchup-vs">
         <div class="vs-big">VS</div>
-        <div class="kick">Regular Season · Game 06</div>
+        <div class="kick">Regular Season · Game 07</div>
         <div class="count">
-          <span class="num">04</span><span class="u">D</span>
-          <span class="num" style="margin-left:8px;">02</span><span class="u">H</span>
-          <span class="num" style="margin-left:8px;">15</span><span class="u">M</span>
+          <span class="num">13</span><span class="u">D</span>
+          <span class="num" style="margin-left:8px;">04</span><span class="u">H</span>
+          <span class="num" style="margin-left:8px;">30</span><span class="u">M</span>
         </div>
       </div>
 
       <div class="matchup-side">
         <span class="crest" style="transform:none;background:var(--black);">
           <picture>
-            <source type="image/webp" srcset="Rolesville.webp">
-            <img src="Rolesville.png" alt="Rolesville" loading="lazy" style="width:170px;height:auto;display:block;" />
+            <source type="image/webp" srcset="Pittsboro.webp">
+            <img src="Pittsboro.png" alt="Pittsboro" loading="lazy" style="width:170px;height:auto;display:block;" />
           </picture>
         </span>
-        <div class="place mono">Home · Invisalign Red Rink</div>
-        <div class="team-name">Rolesville</div>
-        <div class="record">1W · 2L · 1T</div>
+        <div class="place mono">Home · Orange County Sportsplex Rink 1</div>
+        <div class="team-name">Pittsboro</div>
+        <div class="record">0W · 5L · 0T</div>
       </div>
 
       <div class="matchup-meta" style="grid-column:1 / -1;">
         <div class="cell">
           <span class="label mono">Date</span>
-          <span class="val">Sat · Apr 25 · 2026</span>
+          <span class="val">Sun · May 10 · 2026</span>
         </div>
         <div class="cell">
           <span class="label mono">Puck Drop</span>
-          <span class="val"><em>21:45</em> Eastern</span>
+          <span class="val"><em>07:45</em> Eastern</span>
         </div>
         <div class="cell">
           <span class="label mono">Venue</span>
-          <span class="val">Invisalign Arena Red Rink</span>
+          <span class="val">Orange County Sportsplex Rink 1</span>
         </div>
         <div class="cell">
           <span class="label mono">Broadcast</span>
@@ -1084,18 +1262,11 @@
 
     <div class="schedule">
       <div class="sched-row featured upcoming">
-        <div class="date"><span class="m">Apr 25</span>Sat</div>
-        <div class="ha">Away</div>
-        <div class="opp"><em>@ Rolesville</em><span class="sub">Invisalign Arena Red Rink</span></div>
-        <div class="time">21:45 ET</div>
-        <div class="result"><span class="mono hot">Next Up →</span></div>
-      </div>
-      <div class="sched-row upcoming">
         <div class="date"><span class="m">May 10</span>Sun</div>
         <div class="ha">Away</div>
-        <div class="opp">@ Pittsboro<span class="sub">Orange County Sportsplex Rink 1</span></div>
+        <div class="opp"><em>@ Pittsboro</em><span class="sub">Orange County Sportsplex Rink 1</span></div>
         <div class="time">07:45 ET</div>
-        <div class="result"><span class="mono dim">Upcoming</span></div>
+        <div class="result"><span class="mono hot">Next Up →</span></div>
       </div>
       <div class="sched-row upcoming">
         <div class="date"><span class="m">May 18</span>Mon</div>
@@ -1103,6 +1274,13 @@
         <div class="opp">@ Raleigh<span class="sub">Polar Ice Wake Forest</span></div>
         <div class="time">18:00 ET</div>
         <div class="result"><span class="mono dim">Upcoming</span></div>
+      </div>
+      <div class="sched-row">
+        <div class="date"><span class="m">Apr 25</span>Sat</div>
+        <div class="ha">Away</div>
+        <div class="opp">@ Rolesville<span class="sub">Invisalign Arena Red Rink</span></div>
+        <div class="time">—</div>
+        <div class="result l">L 3–16</div>
       </div>
       <div class="sched-row">
         <div class="date"><span class="m">Apr 19</span>Sun</div>
@@ -1335,11 +1513,11 @@
         <div class="section-label">04 / Stats &amp; Standings</div>
         <h2 class="section-title display">By <em>the numbers.</em></h2>
       </div>
-      <p class="section-lede">Triangle HS Hockey League standings and Foxes scorer sheet — updated through <b>five games.</b></p>
+      <p class="section-lede">Triangle HS Hockey League standings and Foxes scorer sheet — updated through <b>six games.</b></p>
     </div>
 
     <!-- Standings -->
-    <div class="stats-subhead">League Standings · 2026</div>
+    <div class="stats-subhead" id="standings">League Standings · 2026</div>
     <div class="stats-table standings">
       <div class="stats-row stats-head">
         <span>RK</span>
@@ -1355,28 +1533,28 @@
         <span>STK</span>
       </div>
       <div class="stats-row">
-        <span class="jr">1</span><span class="pn">Durham<picture><source type="image/webp" srcset="Durham.webp"><img class="team-logo" src="Durham.png" alt="Durham" loading="lazy"></picture></span><span>4</span><span>4</span><span>0</span><span>0</span><span class="pts">8</span><span>36</span><span>16</span><span class="diff-pos">+20</span><span class="stk-w">W4</span>
+        <span class="jr">1</span><span class="pn">Durham<picture><source type="image/webp" srcset="Durham.webp"><img class="team-logo" src="Durham.png" alt="Durham" loading="lazy"></picture></span><span>5</span><span>5</span><span>0</span><span>0</span><span class="pts">10</span><span>42</span><span>20</span><span class="diff-pos">+22</span><span class="stk-w">W5</span>
       </div>
       <div class="stats-row us">
-        <span class="jr">2</span><span class="pn">Fayetteville<picture><source type="image/webp" srcset="brand_assets/Fayetteville_Fox_Logo_BLK.webp"><img class="team-logo" src="brand_assets/Fayetteville_Fox_Logo_BLK.png" alt="Fayetteville" loading="lazy"></picture></span><span>5</span><span>3</span><span>1</span><span>1</span><span class="pts">7</span><span>23</span><span>20</span><span class="diff-pos">+3</span><span class="stk-w">W1</span>
+        <span class="jr">2</span><span class="pn">Fayetteville<picture><source type="image/webp" srcset="brand_assets/Fayetteville_Fox_Logo_BLK.webp"><img class="team-logo" src="brand_assets/Fayetteville_Fox_Logo_BLK.png" alt="Fayetteville" loading="lazy"></picture></span><span>6</span><span>3</span><span>2</span><span>1</span><span class="pts">7</span><span>26</span><span>36</span><span class="diff-neg">-10</span><span class="stk-l">L1</span>
       </div>
       <div class="stats-row">
-        <span class="jr">3</span><span class="pn">South Apex<picture><source type="image/webp" srcset="South%20Apex.webp"><img class="team-logo" src="South%20Apex.png" alt="South Apex" loading="lazy"></picture></span><span>4</span><span>2</span><span>1</span><span>0</span><span class="pts">6</span><span>22</span><span>18</span><span class="diff-pos">+4</span><span class="stk-t">T1</span>
+        <span class="jr">3</span><span class="pn">South Apex<picture><source type="image/webp" srcset="South%20Apex.webp"><img class="team-logo" src="South%20Apex.png" alt="South Apex" loading="lazy"></picture></span><span>5</span><span>2</span><span>1</span><span>2</span><span class="pts">6</span><span>26</span><span>24</span><span class="diff-pos">+2</span><span class="stk-l">L1</span>
       </div>
       <div class="stats-row">
-        <span class="jr">4</span><span class="pn">Chapel Hill<picture><source type="image/webp" srcset="Chapel%20Hill.webp"><img class="team-logo" src="Chapel%20Hill.png" alt="Chapel Hill" loading="lazy"></picture></span><span>5</span><span>2</span><span>3</span><span>0</span><span class="pts">4</span><span>24</span><span>26</span><span class="diff-neg">-2</span><span class="stk-l">L1</span>
+        <span class="jr">4</span><span class="pn">Chapel Hill<picture><source type="image/webp" srcset="Chapel%20Hill.webp"><img class="team-logo" src="Chapel%20Hill.png" alt="Chapel Hill" loading="lazy"></picture></span><span>6</span><span>3</span><span>3</span><span>0</span><span class="pts">6</span><span>33</span><span>29</span><span class="diff-pos">+4</span><span class="stk-w">W1</span>
       </div>
       <div class="stats-row">
-        <span class="jr">5</span><span class="pn">Greater Neuse<picture><source type="image/webp" srcset="Greater%20Nuese.webp"><img class="team-logo" src="Greater%20Nuese.png" alt="Greater Neuse" loading="lazy"></picture></span><span>4</span><span>1</span><span>2</span><span>1</span><span class="pts">4</span><span>17</span><span>10</span><span class="diff-pos">+7</span><span class="stk-t">T1</span>
+        <span class="jr">5</span><span class="pn">Rolesville<picture><source type="image/webp" srcset="Rolesville.webp"><img class="team-logo" src="Rolesville.png" alt="Rolesville" loading="lazy"></picture></span><span>5</span><span>2</span><span>2</span><span>1</span><span class="pts">5</span><span>43</span><span>35</span><span class="diff-pos">+8</span><span class="stk-w">W2</span>
       </div>
       <div class="stats-row">
-        <span class="jr">6</span><span class="pn">Rolesville<picture><source type="image/webp" srcset="Rolesville.webp"><img class="team-logo" src="Rolesville.png" alt="Rolesville" loading="lazy"></picture></span><span>4</span><span>1</span><span>2</span><span>1</span><span class="pts">3</span><span>27</span><span>32</span><span class="diff-neg">-5</span><span class="stk-w">W1</span>
+        <span class="jr">6</span><span class="pn">Greater Neuse<picture><source type="image/webp" srcset="Greater%20Nuese.webp"><img class="team-logo" src="Greater%20Nuese.png" alt="Greater Neuse" loading="lazy"></picture></span><span>5</span><span>1</span><span>1</span><span>3</span><span class="pts">5</span><span>23</span><span>16</span><span class="diff-pos">+7</span><span class="stk-t">T2</span>
       </div>
       <div class="stats-row">
-        <span class="jr">7</span><span class="pn">Raleigh<picture><source type="image/webp" srcset="Raleigh.webp"><img class="team-logo" src="Raleigh.png" alt="Raleigh" loading="lazy"></picture></span><span>4</span><span>1</span><span>2</span><span>1</span><span class="pts">3</span><span>23</span><span>27</span><span class="diff-neg">-4</span><span class="stk-l">L1</span>
+        <span class="jr">7</span><span class="pn">Raleigh<picture><source type="image/webp" srcset="Raleigh.webp"><img class="team-logo" src="Raleigh.png" alt="Raleigh" loading="lazy"></picture></span><span>5</span><span>0</span><span>2</span><span>3</span><span class="pts">3</span><span>29</span><span>33</span><span class="diff-neg">-4</span><span class="stk-t">T1</span>
       </div>
       <div class="stats-row">
-        <span class="jr">8</span><span class="pn">Pittsboro<picture><source type="image/webp" srcset="Pittsboro.webp"><img class="team-logo" src="Pittsboro.png" alt="Pittsboro" loading="lazy"></picture></span><span>4</span><span>0</span><span>4</span><span>0</span><span class="pts">0</span><span>18</span><span>41</span><span class="diff-neg">-23</span><span class="stk-l">L4</span>
+        <span class="jr">8</span><span class="pn">Pittsboro<picture><source type="image/webp" srcset="Pittsboro.webp"><img class="team-logo" src="Pittsboro.png" alt="Pittsboro" loading="lazy"></picture></span><span>5</span><span>0</span><span>5</span><span>0</span><span class="pts">0</span><span>21</span><span>50</span><span class="diff-neg">-29</span><span class="stk-l">L5</span>
       </div>
     </div>
 
@@ -1394,23 +1572,23 @@
         <span>PPG</span>
         <span>GWG</span>
       </div>
-      <div class="stats-row"><span class="jr">11</span><span class="pn">Caden Mackeen</span><span>5</span><span>2</span><span>4</span><span class="pts">6</span><span>0</span><span>0</span><span>1</span></div>
-      <div class="stats-row"><span class="jr">9</span><span class="pn">Brody Howk</span><span>4</span><span>3</span><span>2</span><span class="pts">5</span><span>0</span><span>0</span><span>0</span></div>
-      <div class="stats-row"><span class="jr">7</span><span class="pn">Landon Macdonald</span><span>5</span><span>3</span><span>2</span><span class="pts">5</span><span>0</span><span>0</span><span>0</span></div>
-      <div class="stats-row"><span class="jr">4</span><span class="pn">Austin Bertsch</span><span>4</span><span>3</span><span>1</span><span class="pts">4</span><span>0</span><span>0</span><span>0</span></div>
-      <div class="stats-row"><span class="jr">2</span><span class="pn">John Bishop</span><span>4</span><span>2</span><span>2</span><span class="pts">4</span><span>0</span><span>0</span><span>0</span></div>
-      <div class="stats-row"><span class="jr">20</span><span class="pn">Nathaniel Crom</span><span>4</span><span>2</span><span>1</span><span class="pts">3</span><span>0</span><span>0</span><span>0</span></div>
-      <div class="stats-row"><span class="jr">16</span><span class="pn">Seth Marx</span><span>5</span><span>1</span><span>2</span><span class="pts">3</span><span>0</span><span>0</span><span>0</span></div>
-      <div class="stats-row"><span class="jr">23</span><span class="pn">Seth Waller</span><span>4</span><span>2</span><span>1</span><span class="pts">3</span><span>0</span><span>0</span><span>0</span></div>
-      <div class="stats-row"><span class="jr">17</span><span class="pn">James Williamson</span><span>5</span><span>1</span><span>2</span><span class="pts">3</span><span>0</span><span>0</span><span>0</span></div>
-      <div class="stats-row"><span class="jr">22</span><span class="pn">Gabriel Gagnon</span><span>5</span><span>1</span><span>1</span><span class="pts">2</span><span>0</span><span>0</span><span>0</span></div>
-      <div class="stats-row"><span class="jr">19</span><span class="pn">Cale Rhodes</span><span>4</span><span>0</span><span>2</span><span class="pts">2</span><span>0</span><span>0</span><span>0</span></div>
+      <div class="stats-row"><span class="jr">9</span><span class="pn">Brody Howk</span><span>5</span><span>4</span><span>2</span><span class="pts">6</span><span>0</span><span>0</span><span>0</span></div>
+      <div class="stats-row"><span class="jr">11</span><span class="pn">Caden Mackeen</span><span>6</span><span>2</span><span>4</span><span class="pts">6</span><span>0</span><span>0</span><span>1</span></div>
+      <div class="stats-row"><span class="jr">2</span><span class="pn">John Bishop</span><span>5</span><span>3</span><span>2</span><span class="pts">5</span><span>10</span><span>0</span><span>0</span></div>
+      <div class="stats-row"><span class="jr">7</span><span class="pn">Landon Macdonald</span><span>6</span><span>3</span><span>2</span><span class="pts">5</span><span>2</span><span>0</span><span>0</span></div>
+      <div class="stats-row"><span class="jr">4</span><span class="pn">Austin Bertsch</span><span>5</span><span>3</span><span>1</span><span class="pts">4</span><span>0</span><span>0</span><span>0</span></div>
+      <div class="stats-row"><span class="jr">16</span><span class="pn">Seth Marx</span><span>6</span><span>1</span><span>3</span><span class="pts">4</span><span>24</span><span>0</span><span>0</span></div>
+      <div class="stats-row"><span class="jr">23</span><span class="pn">Seth Waller</span><span>5</span><span>2</span><span>2</span><span class="pts">4</span><span>2</span><span>0</span><span>0</span></div>
+      <div class="stats-row"><span class="jr">17</span><span class="pn">James Williamson</span><span>6</span><span>1</span><span>3</span><span class="pts">4</span><span>4</span><span>0</span><span>0</span></div>
+      <div class="stats-row"><span class="jr">20</span><span class="pn">Nathaniel Crom</span><span>5</span><span>2</span><span>1</span><span class="pts">3</span><span>0</span><span>0</span><span>0</span></div>
+      <div class="stats-row"><span class="jr">19</span><span class="pn">Cale Rhodes</span><span>5</span><span>0</span><span>3</span><span class="pts">3</span><span>4</span><span>0</span><span>0</span></div>
+      <div class="stats-row"><span class="jr">22</span><span class="pn">Gabriel Gagnon</span><span>6</span><span>1</span><span>1</span><span class="pts">2</span><span>0</span><span>0</span><span>0</span></div>
+      <div class="stats-row"><span class="jr">3</span><span class="pn">Anthony Trujillo</span><span>4</span><span>2</span><span>0</span><span class="pts">2</span><span>0</span><span>0</span><span>0</span></div>
       <div class="stats-row"><span class="jr">8</span><span class="pn">Liam Tutor</span><span>4</span><span>1</span><span>1</span><span class="pts">2</span><span>0</span><span>0</span><span>0</span></div>
-      <div class="stats-row"><span class="jr">18</span><span class="pn">Wyatt Chatterson</span><span>3</span><span>0</span><span>1</span><span class="pts">1</span><span>0</span><span>0</span><span>0</span></div>
-      <div class="stats-row"><span class="jr">21</span><span class="pn">Enzo Marseglia</span><span>4</span><span>1</span><span>0</span><span class="pts">1</span><span>0</span><span>0</span><span>0</span></div>
-      <div class="stats-row"><span class="jr">13</span><span class="pn">Logan Stoeckel</span><span>5</span><span>0</span><span>1</span><span class="pts">1</span><span>0</span><span>0</span><span>0</span></div>
-      <div class="stats-row"><span class="jr">3</span><span class="pn">Anthony Trujillo</span><span>3</span><span>1</span><span>0</span><span class="pts">1</span><span>0</span><span>0</span><span>0</span></div>
-      <div class="stats-row"><span class="jr">12</span><span class="pn">Caleb Danialson</span><span>3</span><span>0</span><span>0</span><span class="pts">0</span><span>0</span><span>0</span><span>0</span></div>
+      <div class="stats-row"><span class="jr">18</span><span class="pn">Wyatt Chatterson</span><span>4</span><span>0</span><span>1</span><span class="pts">1</span><span>0</span><span>0</span><span>0</span></div>
+      <div class="stats-row"><span class="jr">21</span><span class="pn">Enzo Marseglia</span><span>4</span><span>1</span><span>0</span><span class="pts">1</span><span>2</span><span>0</span><span>0</span></div>
+      <div class="stats-row"><span class="jr">13</span><span class="pn">Logan Stoeckel</span><span>6</span><span>0</span><span>1</span><span class="pts">1</span><span>0</span><span>0</span><span>0</span></div>
+      <div class="stats-row"><span class="jr">12</span><span class="pn">Caleb Danialson</span><span>3</span><span>0</span><span>0</span><span class="pts">0</span><span>10</span><span>0</span><span>0</span></div>
       <div class="stats-row"><span class="jr">32</span><span class="pn">Everett Lawhorn</span><span>3</span><span>0</span><span>0</span><span class="pts">0</span><span>0</span><span>0</span><span>0</span></div>
       <div class="stats-row"><span class="jr">6</span><span class="pn">Colton Reuter</span><span>3</span><span>0</span><span>0</span><span class="pts">0</span><span>0</span><span>0</span><span>0</span></div>
       <div class="stats-row"><span class="jr">5</span><span class="pn">Ean Reuter</span><span>2</span><span>0</span><span>0</span><span class="pts">0</span><span>0</span><span>0</span><span>0</span></div>
@@ -1432,8 +1610,8 @@
         <span>L</span>
         <span>T</span>
       </div>
-      <div class="stats-row"><span class="jr">31</span><span class="pn">David Carey</span><span>4</span><span>4</span><span>13</span><span>10</span><span class="pts">2.50</span><span>.926</span><span>3</span><span>0</span><span>1</span></div>
-      <div class="stats-row"><span class="jr">30</span><span class="pn">Colton Lilge</span><span>1</span><span>1</span><span>0</span><span>10</span><span class="pts">10.00</span><span>.813</span><span>0</span><span>1</span><span>0</span></div>
+      <div class="stats-row"><span class="jr">31</span><span class="pn">David Carey</span><span>5</span><span>4</span><span>13</span><span>16</span><span class="pts">3.77</span><span>.913</span><span>3</span><span>0</span><span>1</span></div>
+      <div class="stats-row"><span class="jr">30</span><span class="pn">Colton Lilge</span><span>2</span><span>2</span><span>0</span><span>20</span><span class="pts">11.54</span><span>.836</span><span>0</span><span>2</span><span>0</span></div>
     </div>
   </div>
 </section>
@@ -1546,14 +1724,14 @@
       </div>
     </div>
     <div class="socials">
-      <a class="social-ig" href="https://www.instagram.com/fayettevillefoxes/" target="_blank" rel="noopener noreferrer" aria-label="Follow the Fayetteville Foxes on Instagram">
+      <a class="social-ig" href="https://www.instagram.com/fayettevillehockey?igsh=bHljZHE4cDlheTRu" target="_blank" rel="noopener noreferrer" aria-label="Follow @fayettevillehockey on Instagram">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <rect x="3" y="3" width="18" height="18" rx="5" ry="5"/>
           <circle cx="12" cy="12" r="4"/>
           <circle cx="17.5" cy="6.5" r="1.1" fill="currentColor" stroke="none"/>
         </svg>
       </a>
-      <span class="handle">@fayettevillefoxes</span>
+      <span class="handle">@fayettevillehockey</span>
       <span class="handle" aria-hidden="true" style="color:var(--steel);padding:0 4px;">·</span>
       <a class="social-league" href="https://trianglehshl.leagueapps.com/" target="_blank" rel="noopener noreferrer" aria-label="Triangle High School Hockey League on LeagueApps">
         <span class="mark"><picture>
@@ -1603,22 +1781,22 @@
 
   // Player stats (GP/G/A/P) keyed by name — render on each card between birth year and EP link.
   const playerStats = {
-    'Caden Mackeen':    { gp: 5, g: 2, a: 4, p: 6 },
-    'Brody Howk':       { gp: 4, g: 3, a: 2, p: 5 },
-    'Landon Macdonald': { gp: 5, g: 3, a: 2, p: 5 },
-    'Austin Bertsch':   { gp: 4, g: 3, a: 1, p: 4 },
-    'John Bishop':      { gp: 4, g: 2, a: 2, p: 4 },
-    'Nathaniel Crom':   { gp: 4, g: 2, a: 1, p: 3 },
-    'Seth Marx':        { gp: 5, g: 1, a: 2, p: 3 },
-    'Seth Waller':      { gp: 4, g: 2, a: 1, p: 3 },
-    'James Williamson': { gp: 5, g: 1, a: 2, p: 3 },
-    'Gabriel Gagnon':   { gp: 5, g: 1, a: 1, p: 2 },
-    'Cale Rhodes':      { gp: 4, g: 0, a: 2, p: 2 },
+    'Brody Howk':       { gp: 5, g: 4, a: 2, p: 6 },
+    'Caden Mackeen':    { gp: 6, g: 2, a: 4, p: 6 },
+    'John Bishop':      { gp: 5, g: 3, a: 2, p: 5 },
+    'Landon Macdonald': { gp: 6, g: 3, a: 2, p: 5 },
+    'Austin Bertsch':   { gp: 5, g: 3, a: 1, p: 4 },
+    'Seth Marx':        { gp: 6, g: 1, a: 3, p: 4 },
+    'Seth Waller':      { gp: 5, g: 2, a: 2, p: 4 },
+    'James Williamson': { gp: 6, g: 1, a: 3, p: 4 },
+    'Nathaniel Crom':   { gp: 5, g: 2, a: 1, p: 3 },
+    'Cale Rhodes':      { gp: 5, g: 0, a: 3, p: 3 },
+    'Gabriel Gagnon':   { gp: 6, g: 1, a: 1, p: 2 },
+    'Anthony Trujillo': { gp: 4, g: 2, a: 0, p: 2 },
     'Liam Tutor':       { gp: 4, g: 1, a: 1, p: 2 },
-    'Wyatt Chatterson': { gp: 3, g: 0, a: 1, p: 1 },
+    'Wyatt Chatterson': { gp: 4, g: 0, a: 1, p: 1 },
     'Enzo Marseglia':   { gp: 4, g: 1, a: 0, p: 1 },
-    'Logan Stoeckel':   { gp: 5, g: 0, a: 1, p: 1 },
-    'Anthony Trujillo': { gp: 3, g: 1, a: 0, p: 1 },
+    'Logan Stoeckel':   { gp: 6, g: 0, a: 1, p: 1 },
     'Caleb Danialson':  { gp: 3, g: 0, a: 0, p: 0 },
     'Everett Lawhorn':  { gp: 3, g: 0, a: 0, p: 0 },
     'Colton Reuter':    { gp: 3, g: 0, a: 0, p: 0 },
@@ -1627,8 +1805,8 @@
 
   // Goalie stats keyed by name — different column set than skaters.
   const goalieStats = {
-    'David Carey':  { gp: 4, gaa: '2.50',  sv: '.926', w: 3, l: 0, t: 1 },
-    'Colton Lilge': { gp: 1, gaa: '10.00', sv: '.813', w: 0, l: 1, t: 0 }
+    'David Carey':  { gp: 5, gaa: '3.77',  sv: '.913', w: 3, l: 0, t: 1 },
+    'Colton Lilge': { gp: 2, gaa: '11.54', sv: '.836', w: 0, l: 2, t: 0 }
   };
 
   // Slugify a name into a filename stem: "John Bishop" → "john-bishop".
@@ -1744,8 +1922,13 @@
     });
   })();
 
-  // Wire "Directions" links to Google Maps with destination = current/next game's venue.
-  // Google Maps will use the user's GPS for origin or let them type one in.
+  // Wire "Directions" links — on mobile, show an app chooser
+  //   iOS:     Apple Maps · Google Maps · Waze
+  //   Android: Google Maps · Waze
+  // Desktop:  open Google Maps in a new tab (current behavior).
+  // Each option uses the canonical universal HTTPS URL, which iOS/Android route to the
+  // installed native app via Universal Links / App Links — and gracefully fall back to
+  // the web map if the app isn't installed.
   (function(){
     const venueAddress = {
       'Invisalign Arena Red Rink':       'Wake Competition Center, 2800 Competition Center Dr, Morrisville, NC 27560',
@@ -1756,21 +1939,88 @@
       'Polar Ice Wake Forest':           'Polar Ice Wake Forest, 1410 S Main St, Wake Forest, NC 27587'
     };
 
-    // Pull the featured (next) game's venue from the schedule table.
     const featuredSub = document.querySelector('.sched-row.featured .sub');
     const venueText = featuredSub ? featuredSub.textContent.trim() : '';
     const destination = venueAddress[venueText]
       || venueText
       || 'Wake Competition Center, Morrisville, NC';
+    const enc = encodeURIComponent(destination);
 
-    const mapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(destination);
+    const urls = {
+      apple:  'https://maps.apple.com/?daddr=' + enc + '&dirflg=d',
+      google: 'https://www.google.com/maps/dir/?api=1&destination=' + enc + '&travelmode=driving',
+      waze:   'https://www.waze.com/ul?q=' + enc + '&navigate=yes'
+    };
 
-    // Swap every "Directions" link to the Maps URL, open in a new tab.
+    // Platform sniff. iPad on iPadOS 13+ reports as MacIntel with touch points, so
+    // include that case so iPad still gets the iOS chooser.
+    const ua = navigator.userAgent || '';
+    const isIOS = /iPad|iPhone|iPod/.test(ua) ||
+                  (navigator.platform === 'MacIntel' && (navigator.maxTouchPoints || 0) > 1);
+    const isAndroid = /Android/i.test(ua);
+    const isMobile = isIOS || isAndroid;
+
+    const sheet     = document.getElementById('dir-sheet');
+    const backdrop  = document.getElementById('dir-backdrop');
+    const optionsEl = document.getElementById('dir-options');
+    const destEl    = document.getElementById('dir-dest');
+    let lastFocus = null;
+
+    function buildOptions(){
+      const apps = [];
+      if (isIOS) apps.push({ label: 'Apple Maps',  url: urls.apple });
+      apps.push({ label: 'Google Maps', url: urls.google });
+      apps.push({ label: 'Waze',        url: urls.waze });
+      optionsEl.innerHTML = apps.map(a =>
+        '<button type="button" class="dir-option" data-url="' + a.url + '">' +
+          a.label + ' <span class="arrow">→</span>' +
+        '</button>'
+      ).join('');
+    }
+
+    function openSheet(){
+      lastFocus = document.activeElement;
+      sheet.removeAttribute('hidden');
+      backdrop.removeAttribute('hidden');
+      const first = optionsEl.querySelector('.dir-option');
+      if (first) first.focus();
+    }
+    function closeSheet(){
+      sheet.setAttribute('hidden', '');
+      backdrop.setAttribute('hidden', '');
+      if (lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
+    }
+
+    if (sheet && backdrop && optionsEl && destEl) {
+      destEl.textContent = destination;
+      buildOptions();
+
+      optionsEl.addEventListener('click', e => {
+        const btn = e.target.closest('.dir-option');
+        if (!btn) return;
+        window.open(btn.dataset.url, '_blank', 'noopener,noreferrer');
+        closeSheet();
+      });
+      backdrop.addEventListener('click', closeSheet);
+      sheet.querySelectorAll('[data-dir-close]').forEach(b => b.addEventListener('click', closeSheet));
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && !sheet.hasAttribute('hidden')) closeSheet();
+      });
+    }
+
+    // Hook every "Directions" link. Set href to Google Maps as a non-JS / non-mobile fallback;
+    // on mobile we intercept and open the chooser instead.
     document.querySelectorAll('a[href="#directions"]').forEach(a => {
-      a.href = mapsUrl;
+      a.href = urls.google;
       a.target = '_blank';
       a.rel = 'noopener noreferrer';
       a.setAttribute('aria-label', 'Directions to ' + destination);
+      if (isMobile && sheet) {
+        a.addEventListener('click', e => {
+          e.preventDefault();
+          openSheet();
+        });
+      }
     });
   })();
 
@@ -1796,7 +2046,46 @@
       else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); show(idx + 1); }
     });
   })();
+
+  // Mobile hamburger menu — toggle dropdown, close on link click / outside click / Escape.
+  (function(){
+    const btn  = document.querySelector('.nav-hamburger');
+    const menu = document.getElementById('mobile-menu');
+    if (!btn || !menu) return;
+    function setOpen(open){
+      btn.setAttribute('aria-expanded', String(open));
+      menu.classList.toggle('is-open', open);
+    }
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      setOpen(btn.getAttribute('aria-expanded') !== 'true');
+    });
+    menu.addEventListener('click', e => {
+      if (e.target.closest('a')) setOpen(false);
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && btn.getAttribute('aria-expanded') === 'true') {
+        setOpen(false); btn.focus();
+      }
+    });
+    document.addEventListener('click', e => {
+      if (btn.getAttribute('aria-expanded') !== 'true') return;
+      if (e.target.closest('.nav')) return;
+      setOpen(false);
+    });
+  })();
 </script>
+
+<!-- Directions app chooser (mobile bottom sheet) -->
+<div class="dir-backdrop" id="dir-backdrop" hidden></div>
+<aside class="dir-sheet" id="dir-sheet" role="dialog" aria-modal="true" aria-labelledby="dir-title" hidden>
+  <div class="dir-head">
+    <span id="dir-title">Open Directions In</span>
+    <span class="dir-dest" id="dir-dest">—</span>
+  </div>
+  <div id="dir-options"></div>
+  <button type="button" class="dir-cancel" data-dir-close>Cancel</button>
+</aside>
 
 </body>
 </html>
