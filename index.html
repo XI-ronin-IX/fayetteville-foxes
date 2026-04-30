@@ -10,7 +10,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" as="image" href="brand_assets/Fayetteville_Fox_Logo_BLK.webp" type="image/webp" fetchpriority="high" />
+<link rel="preload" as="image" href="brand_assets/Fayetteville_Fox_Logo_HERO.webp" type="image/webp" fetchpriority="high" />
 <link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:ital,wght@0,400;0,700;0,900;1,700;1,900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -463,13 +463,16 @@
     color:var(--bone);
   }
   .matchup-vs .count{
-    display:flex;gap:8px;align-items:baseline;margin-top:4px;
+    display:flex;gap:14px;align-items:baseline;margin-top:4px;
+    flex-wrap:wrap;justify-content:center;
   }
+  .matchup-vs .count .seg{display:inline-flex;align-items:baseline;gap:3px;}
   .matchup-vs .count .num{
     font-family:'Saira Condensed',sans-serif;font-weight:900;font-style:italic;
     font-size:26px;color:var(--bone);line-height:1;
+    font-variant-numeric:tabular-nums;  /* keep digits at fixed width so the seconds tick doesn't jitter */
   }
-  .matchup-vs .count .u{color:var(--smoke);font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;}
+  .matchup-vs .count .u{color:var(--smoke);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.04em;}
 
   .matchup-meta{
     display:grid;grid-template-columns:repeat(4,1fr);gap:20px;
@@ -1145,10 +1148,10 @@
   <!-- Fox mark framed as a jersey patch (top-right, not overlapping title) -->
   <div class="hero-mark rise rise-2">
     <span class="crest" style="transform:none;background:var(--black);box-shadow:0 0 0 2px var(--orange), 0 0 0 3px rgba(10,10,10,0.9), 0 22px 50px -10px rgba(255,85,0,0.4), 0 10px 30px rgba(0,0,0,0.6);"><picture>
-      <source type="image/webp" srcset="brand_assets/Fayetteville_Fox_Logo_BLK.webp">
-      <img src="brand_assets/Fayetteville_Fox_Logo_BLK.png" alt="Fayetteville Foxes crest" fetchpriority="high" />
+      <source type="image/webp" srcset="brand_assets/Fayetteville_Fox_Logo_HERO.webp">
+      <img src="brand_assets/Fayetteville_Fox_Logo_HERO.jpg" alt="Fayetteville Foxes crest" fetchpriority="high" />
     </picture></span>
-    <span class="crest-stamp" style="transform:none;right:-12px;bottom:-16px;">Est · 2011</span>
+    <span class="crest-stamp" style="transform:none;right:-12px;bottom:-16px;">Est · 2023</span>
   </div>
 </section>
 
@@ -1208,7 +1211,7 @@
       <div class="essence-cell">
         <div class="mono n">03 / Clock</div>
         <h3><em>Unrelenting.</em></h3>
-        <p>Sixty minutes of pressure. Down two in the third? We come harder. The work rate is the identity.</p>
+        <p>Sixty minutes of pressure. Down two in the third? We bring the intensity. The work rate is the identity.</p>
       </div>
     </div>
   </div>
@@ -1239,10 +1242,11 @@
       <div class="matchup-vs">
         <div class="vs-big">VS</div>
         <div class="kick">Regular Season · Game 07</div>
-        <div class="count">
-          <span class="num">13</span><span class="u">D</span>
-          <span class="num" style="margin-left:8px;">04</span><span class="u">H</span>
-          <span class="num" style="margin-left:8px;">30</span><span class="u">M</span>
+        <div class="count" id="countdown" aria-live="off">
+          <span class="seg"><span class="num" data-cd="d">13</span><span class="u">: Days</span></span>
+          <span class="seg"><span class="num" data-cd="h">04</span><span class="u">: Hours</span></span>
+          <span class="seg"><span class="num" data-cd="m">30</span><span class="u">: Mins</span></span>
+          <span class="seg"><span class="num" data-cd="s">00</span><span class="u">: Secs</span></span>
         </div>
       </div>
 
@@ -1265,7 +1269,7 @@
         </div>
         <div class="cell">
           <span class="label mono">Puck Drop</span>
-          <span class="val"><em data-meta="puckdrop-time">07:45</em> Eastern</span>
+          <span class="val" data-puckdrop-iso="2026-05-10T07:45:00-04:00"><em data-meta="puckdrop-time">07:45</em> Eastern</span>
         </div>
         <div class="cell">
           <span class="label mono">Venue</span>
@@ -1434,7 +1438,7 @@
         <div class="mono">#17 · Skater</div>
         <div class="num">17</div>
         <div class="name">James Williamson</div>
-        <div class="role">Forward · Born 2009</div>
+        <div class="role">Forward · Born 2008</div>
       </div>
       <div class="player">
         <div class="mono">#18 · Skater</div>
@@ -2101,6 +2105,40 @@
       if (e.key === 'ArrowLeft' || e.key === 'ArrowUp')   { e.preventDefault(); show(idx - 1); }
       else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); show(idx + 1); }
     });
+  })();
+
+  // Live countdown to next puck drop. Target moment is the data-puckdrop-iso
+  // attribute on the matchup-meta puck drop cell — an ISO 8601 string with an
+  // explicit timezone offset (e.g. "2026-05-10T07:45:00-04:00" for EDT). Update
+  // that attribute when the next game changes; this ticker auto-follows.
+  (function(){
+    const src = document.querySelector('[data-puckdrop-iso]');
+    const cd = document.getElementById('countdown');
+    if (!src || !cd) return;
+    const targetMs = Date.parse(src.dataset.puckdropIso || '');
+    if (Number.isNaN(targetMs)) return;
+
+    const dEl = cd.querySelector('[data-cd="d"]');
+    const hEl = cd.querySelector('[data-cd="h"]');
+    const mEl = cd.querySelector('[data-cd="m"]');
+    const sEl = cd.querySelector('[data-cd="s"]');
+    if (!dEl || !hEl || !mEl || !sEl) return;
+
+    const pad = n => String(Math.max(0, n)).padStart(2, '0');
+
+    function tick(){
+      let diff = Math.max(0, targetMs - Date.now());
+      const days  = Math.floor(diff / 86400000); diff -= days  * 86400000;
+      const hours = Math.floor(diff / 3600000);  diff -= hours * 3600000;
+      const mins  = Math.floor(diff / 60000);    diff -= mins  * 60000;
+      const secs  = Math.floor(diff / 1000);
+      dEl.textContent = pad(days);
+      hEl.textContent = pad(hours);
+      mEl.textContent = pad(mins);
+      sEl.textContent = pad(secs);
+    }
+    tick();
+    setInterval(tick, 1000);
   })();
 
   // Sync the hero "Next Puck Drop" banner with the matchup-meta source plus the
