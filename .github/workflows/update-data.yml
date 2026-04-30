@@ -1,0 +1,84 @@
+# Auto-updates standings, scores, and player/goalie stats from the league API
+# (gamesheetstats.com) on game days. The script first checks whether a
+# Fayetteville Foxes game was played today; if not, it exits silently and no
+# commit is made.
+#
+# Failures are reported via GitHub's default workflow-failure email
+# (your account-level notification setting controls delivery).
+
+name: Update Site Data
+
+on:
+  schedule:
+    # 11:00 PM ET every day. ET shifts +1 hour during DST (March–November),
+    # so we schedule both the EDT (03:00 UTC) and EST (04:00 UTC) slots and
+    # the script's no-op-on-non-game-day check makes the duplicate harmless.
+    - cron: '0 3 * * *'   # 23:00 EDT (Mar–Nov)
+    - cron: '0 4 * * *'   # 23:00 EST (Nov–Mar)
+  # Manual trigger button on the Actions page — useful for ad-hoc runs.
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Run even if Foxes did not play today'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write   # needed to commit the regenerated index.html
+
+concurrency:
+  group: update-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          # Use default GITHUB_TOKEN; commits attributed to github-actions[bot].
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install timezone data
+        run: pip install --quiet tzdata
+
+      - name: Skip if no Foxes game today
+        if: ${{ github.event_name == 'schedule' }}
+        id: gate
+        run: |
+          set +e
+          python scripts/update_data.py --check-played
+          rc=$?
+          set -e
+          if [ "$rc" -ne 0 ]; then
+            echo "result=skip" >> "$GITHUB_OUTPUT"
+            echo "No Foxes game played today — exiting without changes."
+          else
+            echo "result=run" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run updater
+        if: ${{ github.event_name != 'schedule' || steps.gate.outputs.result == 'run' }}
+        run: |
+          python scripts/update_data.py
+
+      - name: Commit and push if changed
+        if: ${{ github.event_name != 'schedule' || steps.gate.outputs.result == 'run' }}
+        run: |
+          if git diff --quiet index.html; then
+            echo "No changes to index.html — nothing to commit."
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          DATE=$(date -u +'%Y-%m-%d')
+          git commit -m "auto: refresh league data on $DATE"
+          git push
