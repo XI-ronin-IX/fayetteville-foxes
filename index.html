@@ -915,8 +915,13 @@
     display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:48px;
     padding-bottom:48px;
   }
-  @media(max-width:820px){.foot{grid-template-columns:1fr 1fr;}}
-  @media(max-width:540px){.foot{grid-template-columns:1fr;}}
+  /* Below desktop, keep Team + Gameday columns side-by-side and let brand
+     span the full width above them — avoids a tall single-column footer. */
+  @media(max-width:820px){
+    .foot{grid-template-columns:1fr 1fr;gap:32px 40px;}
+    .foot-brand{grid-column:1 / -1;}
+  }
+  @media(max-width:540px){.foot{gap:28px 24px;}}
   .foot-brand{display:flex;flex-direction:column;gap:16px;}
   .foot-brand img{width:64px;height:64px;}
   .foot-brand .line1{
