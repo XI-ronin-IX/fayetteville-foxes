@@ -476,6 +476,12 @@
     flex-wrap:wrap;justify-content:center;
   }
   .matchup-vs .count .seg{display:inline-flex;align-items:baseline;gap:3px;}
+  /* On phones, force the whole D/H/M/S countdown onto a single line. */
+  @media(max-width:720px){
+    .matchup-vs .count{flex-wrap:nowrap;gap:8px;}
+    .matchup-vs .count .num{font-size:22px;}
+    .matchup-vs .count .u{font-size:10px;}
+  }
   .matchup-vs .count .num{
     font-family:'Saira Condensed',sans-serif;font-weight:900;font-style:italic;
     font-size:26px;color:var(--bone);line-height:1;
