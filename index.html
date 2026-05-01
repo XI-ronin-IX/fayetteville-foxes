@@ -586,8 +586,9 @@
   .player.captain{
     background:linear-gradient(180deg, rgba(255,85,0,0.07), transparent 50%);
   }
-  /* Tag centers horizontally over the headshot (right:40px + 96/2 = 88px from card right). */
-  .player .tag{position:absolute;top:20px;right:calc(40px + 48px);transform:translateX(50%);color:var(--orange);}
+  /* Tag centers horizontally over the headshot (right:40px + 96/2 = 88px from card right)
+     and sits on the same baseline as the "#02 · Skater" mono line (.player padding-top is 28px). */
+  .player .tag{position:absolute;top:28px;right:calc(40px + 48px);transform:translateX(50%);color:var(--orange);}
   .player .num{
     font-family:'Saira Condensed',sans-serif;font-weight:900;font-style:italic;
     font-size:88px;line-height:0.85;color:var(--bone);
