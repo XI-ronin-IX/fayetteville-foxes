@@ -921,7 +921,17 @@
     .foot{grid-template-columns:1fr 1fr;gap:32px 40px;}
     .foot-brand{grid-column:1 / -1;}
   }
-  @media(max-width:540px){.foot{gap:28px 24px;}}
+  /* On phones, put the crest beside the brand text instead of stacking below it. */
+  @media(max-width:540px){
+    .foot{gap:28px 24px;}
+    .foot-brand{
+      display:grid;
+      grid-template-columns:auto 1fr;
+      column-gap:16px;row-gap:8px;
+      align-items:start;
+    }
+    .foot-brand > .crest{grid-row:1 / span 2;}
+  }
   .foot-brand{display:flex;flex-direction:column;gap:16px;}
   .foot-brand img{width:64px;height:64px;}
   .foot-brand .line1{
