@@ -583,7 +583,8 @@
     .player:last-child{border-bottom:none;}
   }
   .player:hover{background:rgba(255,85,0,0.03);}
-  .player.captain{
+  .player.captain,
+  .player.standout{
     background:linear-gradient(180deg, rgba(255,85,0,0.07), transparent 50%);
   }
   /* Tag centers horizontally over the headshot (right:40px + 96/2 = 88px from card right)
@@ -1957,6 +1958,28 @@
     link.setAttribute('aria-label', name + ' on Elite Prospects');
     anchor.insertAdjacentElement('afterend', link);
   });
+
+  // Flag "standout" player cards so they get the orange gradient wash.
+  // Standouts are: cards with a tag element (Captain · C, Alt · A, Starter · G)
+  // plus the top 5 scorers by points (goals as tiebreaker).
+  (function(){
+    document.querySelectorAll('.player').forEach(card => {
+      if (card.querySelector('.tag')) card.classList.add('standout');
+    });
+    if (typeof playerStats !== 'undefined') {
+      const top5 = Object.entries(playerStats)
+        .sort((a, b) => (b[1].p - a[1].p) || (b[1].g - a[1].g))
+        .slice(0, 5)
+        .map(([name]) => name);
+      document.querySelectorAll('.player').forEach(card => {
+        const nameEl = card.querySelector('.name');
+        if (!nameEl) return;
+        if (top5.includes(nameEl.textContent.trim())) {
+          card.classList.add('standout');
+        }
+      });
+    }
+  })();
 
   // Attach opponent logos to each schedule row based on opponent name.
   (function(){
