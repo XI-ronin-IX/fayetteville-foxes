@@ -580,7 +580,8 @@
   .player.captain{
     background:linear-gradient(180deg, rgba(255,85,0,0.07), transparent 50%);
   }
-  .player .tag{position:absolute;top:20px;right:20px;color:var(--orange);}
+  /* Tag centers horizontally over the headshot (right:40px + 96/2 = 88px from card right). */
+  .player .tag{position:absolute;top:20px;right:calc(40px + 48px);transform:translateX(50%);color:var(--orange);}
   .player .num{
     font-family:'Saira Condensed',sans-serif;font-weight:900;font-style:italic;
     font-size:88px;line-height:0.85;color:var(--bone);
@@ -590,7 +591,7 @@
   .player .headshot{
     position:absolute;
     top:56px;right:40px;
-    width:84px;height:84px;
+    width:96px;height:96px;
     object-fit:cover;object-position:center top;
     background:var(--ink-2);
     border:1px solid var(--line);
