@@ -1959,6 +1959,55 @@
     anchor.insertAdjacentElement('afterend', link);
   });
 
+  // Move the orange-square active indicator on click + track scroll position
+  // via IntersectionObserver so it keeps following the section in view.
+  (function(){
+    const links = document.querySelectorAll('.nav-links a');
+    if (!links.length) return;
+
+    // Map id -> link, and collect target sections to observe.
+    const linkById = {};
+    const sections = [];
+    links.forEach(link => {
+      const href = link.getAttribute('href') || '';
+      if (!href.startsWith('#') || href === '#') return;
+      const id = href.slice(1);
+      const sec = document.getElementById(id);
+      if (sec) {
+        linkById[id] = link;
+        sections.push(sec);
+      }
+    });
+
+    function setActive(id){
+      links.forEach(l => l.classList.remove('active'));
+      if (linkById[id]) linkById[id].classList.add('active');
+    }
+
+    // Click: instant indicator move (don't wait for scroll-into-view to finish).
+    links.forEach(link => {
+      link.addEventListener('click', () => {
+        const href = link.getAttribute('href') || '';
+        if (href.startsWith('#') && href !== '#') setActive(href.slice(1));
+      });
+    });
+
+    // Scroll: trigger when a section's top crosses below the sticky nav.
+    // rootMargin shrinks the viewport to a thin strip just under the nav, so
+    // the moment a section enters that strip it becomes the active one.
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting) setActive(e.target.id);
+        });
+      }, {
+        rootMargin: '-64px 0px -75% 0px',
+        threshold: 0,
+      });
+      sections.forEach(s => observer.observe(s));
+    }
+  })();
+
   // Flag "standout" player cards so they get the orange gradient wash.
   // Standouts are: cards with a tag element (Captain · C, Alt · A, Starter · G)
   // plus the top 5 scorers by points (goals as tiebreaker).
