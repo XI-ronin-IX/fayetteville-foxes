@@ -10,11 +10,11 @@ name: Update Site Data
 
 on:
   schedule:
-    # 11:00 PM ET every day. ET shifts +1 hour during DST (March–November),
-    # so we schedule both the EDT (03:00 UTC) and EST (04:00 UTC) slots and
-    # the script's no-op-on-non-game-day check makes the duplicate harmless.
-    - cron: '0 3 * * *'   # 23:00 EDT (Mar–Nov)
-    - cron: '0 4 * * *'   # 23:00 EST (Nov–Mar)
+    # 11:00 PM ET every day. ET shifts +1 hour during DST. Cron has no DST awareness,
+    # so we schedule both UTC slots, but constrain each by month so only one fires
+    # per calendar day. EDT (March–November). EST (December, January, February).
+    - cron: '0 3 * 3-11 *'   # 23:00 EDT, Mar–Nov
+    - cron: '0 4 * 1,2,12 *'  # 23:00 EST, Dec–Feb
   # Manual trigger button on the Actions page — useful for ad-hoc runs.
   workflow_dispatch:
     inputs:
@@ -35,19 +35,21 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      # Third-party Actions are pinned by full SHA (supply-chain hygiene).
+      # Update via Dependabot or manually re-tag when bumping versions.
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11   # v4.1.1
         with:
           # Use default GITHUB_TOKEN; commits attributed to github-actions[bot].
           persist-credentials: true
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c   # v5.0.0
         with:
           python-version: '3.12'
 
-      - name: Install timezone data
-        run: pip install --quiet tzdata
+      # Note: tzdata is bundled with Linux runners (zoneinfo reads /usr/share/zoneinfo
+      # directly), so the pip install is only needed on Windows. Skip it here.
 
       - name: Skip if no Foxes game today
         if: ${{ github.event_name == 'schedule' }}

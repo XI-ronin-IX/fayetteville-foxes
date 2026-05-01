@@ -23,6 +23,7 @@ treats non-zero exit as a failure (email notification).
 from __future__ import annotations
 
 import argparse
+import html
 import json
 import os
 import re
@@ -34,6 +35,14 @@ from datetime import date, datetime, timezone, timedelta
 from pathlib import Path
 from typing import Any, Iterable
 from zoneinfo import ZoneInfo
+
+
+def H(s: Any) -> str:
+    """Escape a value for HTML text content (default) or attribute use.
+    Always escapes <, >, &, ", '. Defense-in-depth: any value pulled from the
+    league API is run through this before being inserted into index.html.
+    """
+    return html.escape("" if s is None else str(s), quote=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Configuration
@@ -374,26 +383,27 @@ def build_standings_block(teams: list[dict]) -> str:
         team_disp = TEAM_DISPLAY.get(t["team"], t["team"])
         logo = TEAM_LOGOS.get(t["team"])
         if logo:
+            # Logo paths come from our internal map (TEAM_LOGOS) — trusted, no escape needed.
             logo_html = (
                 f'<picture><source type="image/webp" srcset="{logo}.webp">'
-                f'<img class="team-logo" src="{logo}.png" alt="{team_disp}" loading="lazy"></picture>'
+                f'<img class="team-logo" src="{logo}.png" alt="{H(team_disp)}" loading="lazy"></picture>'
             )
         else:
             logo_html = ""
         row_class = "stats-row us" if t["team"] == FAYETTEVILLE_TEAM_NAME else "stats-row"
         rows.append(
             f'      <div class="{row_class}">\n'
-            f'        <span class="jr">{t["rank"]}</span>'
-            f'<span class="pn">{team_disp}{logo_html}</span>'
-            f'<span>{t["gp"]}</span>'
-            f'<span>{t["w"]}</span>'
-            f'<span>{t["l"]}</span>'
-            f'<span>{t["t"]}</span>'
-            f'<span class="pts">{t["pts"]}</span>'
-            f'<span>{t["gf"]}</span>'
-            f'<span>{t["ga"]}</span>'
-            f'<span class="{diff_cls}">{diff_text}</span>'
-            f'<span class="{stk_cls}">{stk_text}</span>\n'
+            f'        <span class="jr">{H(t["rank"])}</span>'
+            f'<span class="pn">{H(team_disp)}{logo_html}</span>'
+            f'<span>{H(t["gp"])}</span>'
+            f'<span>{H(t["w"])}</span>'
+            f'<span>{H(t["l"])}</span>'
+            f'<span>{H(t["t"])}</span>'
+            f'<span class="pts">{H(t["pts"])}</span>'
+            f'<span>{H(t["gf"])}</span>'
+            f'<span>{H(t["ga"])}</span>'
+            f'<span class="{diff_cls}">{H(diff_text)}</span>'
+            f'<span class="{stk_cls}">{H(stk_text)}</span>\n'
             f'      </div>'
         )
     return "\n".join(rows)
@@ -407,15 +417,15 @@ def build_skater_block(players: list[dict], existing_jerseys: dict[str, str]) ->
         jersey = p["jersey"] or existing_jerseys.get(p["display_name"], "")
         rows.append(
             f'      <div class="stats-row">'
-            f'<span class="jr">{jersey}</span>'
-            f'<span class="pn">{p["display_name"]}</span>'
-            f'<span>{p["gp"]}</span>'
-            f'<span>{p["g"]}</span>'
-            f'<span>{p["a"]}</span>'
-            f'<span class="pts">{p["pts"]}</span>'
-            f'<span>{p["pim"]}</span>'
-            f'<span>{p["ppg"]}</span>'
-            f'<span>{p["gwg"]}</span>'
+            f'<span class="jr">{H(jersey)}</span>'
+            f'<span class="pn">{H(p["display_name"])}</span>'
+            f'<span>{H(p["gp"])}</span>'
+            f'<span>{H(p["g"])}</span>'
+            f'<span>{H(p["a"])}</span>'
+            f'<span class="pts">{H(p["pts"])}</span>'
+            f'<span>{H(p["pim"])}</span>'
+            f'<span>{H(p["ppg"])}</span>'
+            f'<span>{H(p["gwg"])}</span>'
             f'</div>'
         )
     return "\n".join(rows)
@@ -444,17 +454,17 @@ def build_goalie_block(
                 svpct = ".000"
         rows.append(
             f'      <div class="stats-row">'
-            f'<span class="jr">{jersey}</span>'
-            f'<span class="pn">{g["display_name"]}</span>'
-            f'<span>{g["gp"]}</span>'
-            f'<span>{g["gs"]}</span>'
-            f'<span>{g["sa"]}</span>'
-            f'<span>{g["ga"]}</span>'
-            f'<span class="pts">{g["gaa"]}</span>'
-            f'<span>{svpct}</span>'
-            f'<span>{g["w"]}</span>'
-            f'<span>{g["l"]}</span>'
-            f'<span>{g["t"]}</span>'
+            f'<span class="jr">{H(jersey)}</span>'
+            f'<span class="pn">{H(g["display_name"])}</span>'
+            f'<span>{H(g["gp"])}</span>'
+            f'<span>{H(g["gs"])}</span>'
+            f'<span>{H(g["sa"])}</span>'
+            f'<span>{H(g["ga"])}</span>'
+            f'<span class="pts">{H(g["gaa"])}</span>'
+            f'<span>{H(svpct)}</span>'
+            f'<span>{H(g["w"])}</span>'
+            f'<span>{H(g["l"])}</span>'
+            f'<span>{H(g["t"])}</span>'
             f'</div>'
         )
     return "\n".join(rows)
@@ -493,19 +503,19 @@ def build_schedule_list_block(
         prefix = "vs" if is_home else "@"
         venue = normalize_venue(g.get("location", "TBD"))
         if idx == 0:
-            opp_html = f'<em>{prefix} {opp}</em>'
+            opp_html = f'<em>{H(prefix)} {H(opp)}</em>'
             badge = '<span class="mono hot">Next Up →</span>'
             row_classes = "sched-row featured upcoming"
         else:
-            opp_html = f'{prefix} {opp}'
+            opp_html = f'{H(prefix)} {H(opp)}'
             badge = '<span class="mono dim">Upcoming</span>'
             row_classes = "sched-row upcoming"
         rows.append(
             f'      <div class="{row_classes}">\n'
-            f'        <div class="date"><span class="m">{fmt_short_date(d)}</span>{fmt_dow_short(d)}</div>\n'
+            f'        <div class="date"><span class="m">{H(fmt_short_date(d))}</span>{H(fmt_dow_short(d))}</div>\n'
             f'        <div class="ha">{"Home" if is_home else "Away"}</div>\n'
-            f'        <div class="opp">{opp_html}<span class="sub">{venue}</span></div>\n'
-            f'        <div class="time">{time_24} ET</div>\n'
+            f'        <div class="opp">{opp_html}<span class="sub">{H(venue)}</span></div>\n'
+            f'        <div class="time">{H(time_24)} ET</div>\n'
             f'        <div class="result">{badge}</div>\n'
             f'      </div>'
         )
@@ -518,25 +528,24 @@ def build_schedule_list_block(
         venue = normalize_venue(gm.get("location", "TBD"))
         d = parse_game_date(gm["date"])
         prefix = "vs" if is_home else "@"
-        # Score from Fox perspective
-        fox_goals = gm["finalScore"]["homeGoals" if is_home else "visitorGoals"]
-        opp_goals = gm["finalScore"]["visitorGoals" if is_home else "homeGoals"]
-        fox_goals = int_or(fox_goals)
-        opp_goals = int_or(opp_goals)
+        # Goal counts run through int_or so they're guaranteed to be safe ints,
+        # but escaping costs nothing and protects future readers.
+        fox_goals = int_or(gm["finalScore"]["homeGoals" if is_home else "visitorGoals"])
+        opp_goals = int_or(gm["finalScore"]["visitorGoals" if is_home else "homeGoals"])
         if fox_goals > opp_goals:
-            result_html = f'<div class="result w">W {fox_goals}–{opp_goals}</div>'
+            result_html = f'<div class="result w">W {H(fox_goals)}–{H(opp_goals)}</div>'
         elif fox_goals < opp_goals:
-            result_html = f'<div class="result l">L {fox_goals}–{opp_goals}</div>'
+            result_html = f'<div class="result l">L {H(fox_goals)}–{H(opp_goals)}</div>'
         else:
             result_html = (
                 f'<div class="result"><span style="color:var(--smoke);font-weight:700;">'
-                f'T {fox_goals}–{opp_goals}</span></div>'
+                f'T {H(fox_goals)}–{H(opp_goals)}</span></div>'
             )
         rows.append(
             f'      <div class="sched-row">\n'
-            f'        <div class="date"><span class="m">{fmt_short_date(d)}</span>{fmt_dow_short(d)}</div>\n'
+            f'        <div class="date"><span class="m">{H(fmt_short_date(d))}</span>{H(fmt_dow_short(d))}</div>\n'
             f'        <div class="ha">{"Home" if is_home else "Away"}</div>\n'
-            f'        <div class="opp">{prefix} {opp}<span class="sub">{venue}</span></div>\n'
+            f'        <div class="opp">{H(prefix)} {H(opp)}<span class="sub">{H(venue)}</span></div>\n'
             f'        <div class="time">—</div>\n'
             f'        {result_html}\n'
             f'      </div>'
@@ -577,11 +586,11 @@ def build_ticker_block(played: list[dict], n: int = 6) -> str:
             indicator = "T"
         items.append(
             f'    <span class="ticker-item">'
-            f'<span class="{indicator_class}">{indicator}</span> '
-            f'<span class="team">Foxes</span> {fox_goals} '
-            f'<span class="mono dim">—</span> {opp_goals} '
-            f'<span class="team">{opp_name}</span> '
-            f'<span class="mono dim">{fmt_short_date(d)}</span></span>\n'
+            f'<span class="{indicator_class}">{H(indicator)}</span> '
+            f'<span class="team">Foxes</span> {H(fox_goals)} '
+            f'<span class="mono dim">—</span> {H(opp_goals)} '
+            f'<span class="team">{H(opp_name)}</span> '
+            f'<span class="mono dim">{H(fmt_short_date(d))}</span></span>\n'
             f'    <span class="ticker-dot"></span>'
         )
 
@@ -646,11 +655,12 @@ def build_matchup_block(
     mins = max(0, ((diff.seconds % 3600) // 60))
 
     if opp_logo:
+        # opp_logo path comes from our internal TEAM_LOGOS map — trusted.
         opp_logo_block = (
             f'        <span class="crest" style="transform:none;background:var(--black);">\n'
             f'          <picture>\n'
             f'            <source type="image/webp" srcset="{opp_logo}.webp">\n'
-            f'            <img src="{opp_logo}.png" alt="{opp_disp}" loading="lazy" '
+            f'            <img src="{opp_logo}.png" alt="{H(opp_disp)}" loading="lazy" '
             f'style="width:170px;height:auto;display:block;" />\n'
             f'          </picture>\n'
             f'        </span>'
@@ -665,14 +675,14 @@ def build_matchup_block(
         '          <img src="brand_assets/Fayetteville_Fox_Logo_BLK.png" alt="Fayetteville Foxes" '
         'loading="lazy" style="width:170px;height:auto;display:block;" />\n'
         '        </picture></span>\n'
-        f'        <div class="place mono">{fox_place}</div>\n'
+        f'        <div class="place mono">{H(fox_place)}</div>\n'
         '        <div class="team-name">Fayetteville <em>Foxes</em></div>\n'
-        f'        <div class="record" data-foxes-record="dotted">{fox_record}</div>\n'
+        f'        <div class="record" data-foxes-record="dotted">{H(fox_record)}</div>\n'
         '      </div>\n'
         '\n'
         '      <div class="matchup-vs">\n'
         '        <div class="vs-big">VS</div>\n'
-        f'        <div class="kick">Regular Season · Game {game_num}</div>\n'
+        f'        <div class="kick">Regular Season · Game {H(game_num)}</div>\n'
         '        <div class="count" id="countdown" aria-live="off">\n'
         f'          <span class="seg"><span class="num" data-cd="d">{days:02d}</span>'
         '<span class="u">: Days</span></span>\n'
@@ -687,24 +697,24 @@ def build_matchup_block(
         '\n'
         '      <div class="matchup-side">\n'
         f'{opp_logo_block}\n'
-        f'        <div class="place mono">{opp_place}</div>\n'
-        f'        <div class="team-name">{opp_disp}</div>\n'
-        f'        <div class="record">{opp_record}</div>\n'
+        f'        <div class="place mono">{H(opp_place)}</div>\n'
+        f'        <div class="team-name">{H(opp_disp)}</div>\n'
+        f'        <div class="record">{H(opp_record)}</div>\n'
         '      </div>\n'
         '\n'
         '      <div class="matchup-meta" style="grid-column:1 / -1;">\n'
         '        <div class="cell">\n'
         '          <span class="label mono">Date</span>\n'
-        f'          <span class="val" data-meta="date">{long_date}</span>\n'
+        f'          <span class="val" data-meta="date">{H(long_date)}</span>\n'
         '        </div>\n'
         '        <div class="cell">\n'
         '          <span class="label mono">Puck Drop</span>\n'
-        f'          <span class="val" data-puckdrop-iso="{iso_target}">'
-        f'<em data-meta="puckdrop-time">{drop_24}</em> Eastern</span>\n'
+        f'          <span class="val" data-puckdrop-iso="{H(iso_target)}">'
+        f'<em data-meta="puckdrop-time">{H(drop_24)}</em> Eastern</span>\n'
         '        </div>\n'
         '        <div class="cell">\n'
         '          <span class="label mono">Venue</span>\n'
-        f'          <span class="val" data-meta="venue">{venue}</span>\n'
+        f'          <span class="val" data-meta="venue">{H(venue)}</span>\n'
         '        </div>\n'
         '        <div class="cell">\n'
         '          <span class="label mono">Broadcast</span>\n'
