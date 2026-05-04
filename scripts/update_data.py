@@ -808,7 +808,8 @@ def main(argv: list[str] | None = None) -> int:
             pass
     p = argparse.ArgumentParser(description="Update auto-managed sections of index.html")
     p.add_argument("--first-run", action="store_true",
-                   help="Preserve existing manual goalie save percentage values")
+                   help="(Deprecated) No-op flag, kept for backwards compat. "
+                        "Manual goalie save percentage is now always preserved.")
     p.add_argument("--dry-run", action="store_true",
                    help="Print diff but don't write")
     p.add_argument("--check-played", action="store_true",
@@ -848,10 +849,14 @@ def main(argv: list[str] | None = None) -> int:
 
     html_old = index_path.read_text(encoding="utf-8")
     existing_jerseys = extract_existing_jerseys(html_old)
-    svp_overrides = None
-    if args.first_run:
-        svp_overrides = extract_existing_svpct(html_old)
-        print(f"  --first-run: preserving SV% for {list(svp_overrides)}")
+    # Always preserve manual goalie SV% — the league portal returns 0.000 (their
+    # SA/GA accounting differs from ours), so the API value is not reliable.
+    # The user maintains SV% by hand in index.html; the script touches everything
+    # else but leaves SV% alone. The --first-run flag is now a no-op for SV%
+    # and is kept only for any future "preserve more on first run" needs.
+    svp_overrides = extract_existing_svpct(html_old)
+    if svp_overrides:
+        print(f"  preserving manual SV% for {list(svp_overrides)}")
 
     standings_block = build_standings_block(standings)
     skater_block = build_skater_block(skaters, existing_jerseys)
