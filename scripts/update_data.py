@@ -323,6 +323,30 @@ def fmt_record(w: int, l: int, t: int) -> str:
     return f"{w}W · {l}L · {t}T"
 
 
+def parse_schedule_start(s: str | None) -> datetime | None:
+    """Parse the API's `scheduleStartTime` (ISO 8601, may end in 'Z') to a
+    timezone-aware datetime. Returns None on missing/malformed input.
+    """
+    if not s:
+        return None
+    try:
+        # Python's fromisoformat in 3.11+ handles 'Z'; older needs a swap.
+        return datetime.fromisoformat(s.replace("Z", "+00:00"))
+    except (ValueError, TypeError):
+        return None
+
+
+def is_future(g: dict, now_utc: datetime) -> bool:
+    """True if the game's scheduleStartTime is in the future (UTC).
+
+    The league API leaves played games in the 'upcoming' endpoint until they
+    manually mark them complete — so we need this filter to skip past games
+    that were never moved out of upcoming.
+    """
+    sst = parse_schedule_start(g.get("scheduleStartTime"))
+    return sst is not None and sst > now_utc
+
+
 def normalize_venue(s: str) -> str:
     """Clean up venue strings from the API.
 
@@ -474,9 +498,11 @@ def build_schedule_list_block(
     upcoming: list[dict], played: list[dict]
 ) -> str:
     """Build the .sched-row rows: [featured, upcoming…, played (newest first)]."""
+    now_utc = datetime.now(timezone.utc)
     foxes_upcoming = [
         g for g in upcoming
         if FAYETTEVILLE_TEAM_NAME in (g["homeTeam"]["name"], g["visitorTeam"]["name"])
+        and is_future(g, now_utc)
     ]
     foxes_upcoming.sort(key=lambda g: g.get("scheduleStartTime", ""))
     foxes_played = [
@@ -604,10 +630,17 @@ def build_ticker_block(played: list[dict], n: int = 6) -> str:
 def build_matchup_block(
     upcoming: list[dict], standings: list[dict], played: list[dict]
 ) -> str | None:
-    """Build the matchup hero card (Fayetteville vs next opponent)."""
+    """Build the matchup hero card (Fayetteville vs next opponent).
+
+    Filters out past-but-still-in-upcoming-endpoint games — the league leaves
+    completed games in the 'upcoming' feed until manually marked, so without
+    this filter the matchup card would stay stuck on yesterday's game forever.
+    """
+    now_utc = datetime.now(timezone.utc)
     foxes_upcoming = [
         g for g in upcoming
         if FAYETTEVILLE_TEAM_NAME in (g["homeTeam"]["name"], g["visitorTeam"]["name"])
+        and is_future(g, now_utc)
     ]
     if not foxes_upcoming:
         return None
