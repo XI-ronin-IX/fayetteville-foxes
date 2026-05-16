@@ -8,17 +8,22 @@
 <title>Fayetteville Foxes — Varsity Ice Hockey</title>
 <meta name="description" content="Official home of the Fayetteville Foxes. Cunning. Ferocious. Unrelenting." />
 
-<!-- Favicons (Google requires square, multiple of 48; min 48x48 surfaced in search results) -->
+<!-- Favicons. Browser tabs use favicon.ico (multi-res 16/32/48); Google search uses
+     192px; iOS home-screen uses 180x180 apple-touch-icon. The 48/96/512 PNG variants
+     were redundant — every modern browser/aggregator picks one of these three. -->
 <link rel="icon" href="/favicon.ico" sizes="any">
-<link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png">
-<link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="/favicon-512x512.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" as="image" href="brand_assets/Fayetteville_Fox_Logo_HERO.webp" type="image/webp" fetchpriority="high" />
+<link rel="preload" as="image" type="image/webp"
+  href="brand_assets/Fayetteville_Fox_Logo_HERO-440.webp"
+  imagesrcset="brand_assets/Fayetteville_Fox_Logo_HERO-320.webp 320w,
+               brand_assets/Fayetteville_Fox_Logo_HERO-440.webp 440w,
+               brand_assets/Fayetteville_Fox_Logo_HERO-880.webp 880w"
+  imagesizes="(max-width: 820px) 320px, (max-width: 1100px) 300px, 440px"
+  fetchpriority="high" />
 <link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:ital,wght@0,400;0,700;0,900;1,700;1,900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -375,6 +380,7 @@
   .ticker-item{display:inline-flex;align-items:center;gap:14px;color:var(--smoke);}
   .ticker-item .w{color:var(--orange);font-weight:700;}
   .ticker-item .l{color:var(--smoke-2);font-weight:700;}
+  .ticker-item .t{color:var(--bone);font-weight:700;}
   .ticker-item .team{color:var(--bone);}
   .ticker-dot{width:4px;height:4px;background:var(--steel);border-radius:50%;}
   /* The -28px adjustment is half of the 56px gap — it accounts for the connecting
@@ -1191,8 +1197,19 @@
   <!-- Fox mark framed as a jersey patch (top-right, not overlapping title) -->
   <div class="hero-mark rise rise-2">
     <span class="crest" style="transform:none;background:var(--black);box-shadow:0 0 0 2px var(--orange), 0 0 0 3px rgba(10,10,10,0.9), 0 22px 50px -10px rgba(255,85,0,0.4), 0 10px 30px rgba(0,0,0,0.6);"><picture>
-      <source type="image/webp" srcset="brand_assets/Fayetteville_Fox_Logo_HERO.webp">
-      <img src="brand_assets/Fayetteville_Fox_Logo_HERO.jpg" alt="Fayetteville Foxes crest" width="1254" height="1254" fetchpriority="high" />
+      <source type="image/webp"
+        srcset="brand_assets/Fayetteville_Fox_Logo_HERO-320.webp 320w,
+                brand_assets/Fayetteville_Fox_Logo_HERO-440.webp 440w,
+                brand_assets/Fayetteville_Fox_Logo_HERO-880.webp 880w,
+                brand_assets/Fayetteville_Fox_Logo_HERO.webp 1254w"
+        sizes="(max-width: 820px) 320px, (max-width: 1100px) 300px, 440px">
+      <img src="brand_assets/Fayetteville_Fox_Logo_HERO-440.jpg"
+        srcset="brand_assets/Fayetteville_Fox_Logo_HERO-320.jpg 320w,
+                brand_assets/Fayetteville_Fox_Logo_HERO-440.jpg 440w,
+                brand_assets/Fayetteville_Fox_Logo_HERO-880.jpg 880w,
+                brand_assets/Fayetteville_Fox_Logo_HERO.jpg 1254w"
+        sizes="(max-width: 820px) 320px, (max-width: 1100px) 300px, 440px"
+        alt="Fayetteville Foxes crest" width="1254" height="1254" fetchpriority="high" />
     </picture></span>
   </div>
 </section>
@@ -1289,8 +1306,8 @@
         <div class="kick">Regular Season · Game 08</div>
         <div class="count" id="countdown" aria-live="off">
           <span class="seg"><span class="num" data-cd="d">04</span><span class="u">: Days</span></span>
-          <span class="seg"><span class="num" data-cd="h">23</span><span class="u">: Hours</span></span>
-          <span class="seg"><span class="num" data-cd="m">54</span><span class="u">: Mins</span></span>
+          <span class="seg"><span class="num" data-cd="h">21</span><span class="u">: Hours</span></span>
+          <span class="seg"><span class="num" data-cd="m">17</span><span class="u">: Mins</span></span>
           <span class="seg"><span class="num" data-cd="s">00</span><span class="u">: Secs</span></span>
         </div>
       </div>
@@ -1606,17 +1623,17 @@
       <div class="stats-row">
         <span class="jr">1</span><span class="pn">Durham<picture><source type="image/webp" srcset="Durham.webp"><img class="team-logo" src="Durham.png" alt="Durham" loading="lazy"></picture></span><span>6</span><span>5</span><span>0</span><span>1</span><span class="pts">11</span><span>45</span><span>23</span><span class="diff-pos">+22</span><span class="stk-t">T1</span>
       </div>
-      <div class="stats-row us">
-        <span class="jr">2</span><span class="pn">Fayetteville<picture><source type="image/webp" srcset="brand_assets/Fayetteville_Fox_Logo_BLK.webp"><img class="team-logo" src="brand_assets/Fayetteville_Fox_Logo_BLK.png" alt="Fayetteville" loading="lazy"></picture></span><span>7</span><span>4</span><span>2</span><span>1</span><span class="pts">9</span><span>32</span><span>39</span><span class="diff-neg">-7</span><span class="stk-w">W1</span>
-      </div>
       <div class="stats-row">
-        <span class="jr">3</span><span class="pn">South Apex<picture><source type="image/webp" srcset="South%20Apex.webp"><img class="team-logo" src="South%20Apex.png" alt="South Apex" loading="lazy"></picture></span><span>6</span><span>3</span><span>1</span><span>2</span><span class="pts">8</span><span>37</span><span>24</span><span class="diff-pos">+13</span><span class="stk-w">W1</span>
+        <span class="jr">2</span><span class="pn">South Apex<picture><source type="image/webp" srcset="South%20Apex.webp"><img class="team-logo" src="South%20Apex.png" alt="South Apex" loading="lazy"></picture></span><span>7</span><span>4</span><span>1</span><span>2</span><span class="pts">10</span><span>46</span><span>30</span><span class="diff-pos">+16</span><span class="stk-w">W2</span>
+      </div>
+      <div class="stats-row us">
+        <span class="jr">3</span><span class="pn">Fayetteville<picture><source type="image/webp" srcset="brand_assets/Fayetteville_Fox_Logo_BLK.webp"><img class="team-logo" src="brand_assets/Fayetteville_Fox_Logo_BLK.png" alt="Fayetteville" loading="lazy"></picture></span><span>7</span><span>4</span><span>2</span><span>1</span><span class="pts">9</span><span>32</span><span>39</span><span class="diff-neg">-7</span><span class="stk-w">W1</span>
       </div>
       <div class="stats-row">
         <span class="jr">4</span><span class="pn">Chapel Hill<picture><source type="image/webp" srcset="Chapel%20Hill.webp"><img class="team-logo" src="Chapel%20Hill.png" alt="Chapel Hill" loading="lazy"></picture></span><span>7</span><span>4</span><span>3</span><span>0</span><span class="pts">8</span><span>37</span><span>30</span><span class="diff-pos">+7</span><span class="stk-w">W2</span>
       </div>
       <div class="stats-row">
-        <span class="jr">5</span><span class="pn">Rolesville<picture><source type="image/webp" srcset="Rolesville.webp"><img class="team-logo" src="Rolesville.png" alt="Rolesville" loading="lazy"></picture></span><span>6</span><span>2</span><span>3</span><span>1</span><span class="pts">5</span><span>43</span><span>46</span><span class="diff-neg">-3</span><span class="stk-l">L1</span>
+        <span class="jr">5</span><span class="pn">Rolesville<picture><source type="image/webp" srcset="Rolesville.webp"><img class="team-logo" src="Rolesville.png" alt="Rolesville" loading="lazy"></picture></span><span>7</span><span>2</span><span>4</span><span>1</span><span class="pts">5</span><span>49</span><span>55</span><span class="diff-neg">-6</span><span class="stk-l">L2</span>
       </div>
       <div class="stats-row">
         <span class="jr">6</span><span class="pn">Greater Neuse<picture><source type="image/webp" srcset="Greater%20Nuese.webp"><img class="team-logo" src="Greater%20Nuese.png" alt="Greater Neuse" loading="lazy"></picture></span><span>6</span><span>1</span><span>2</span><span>3</span><span class="pts">5</span><span>24</span><span>20</span><span class="diff-pos">+4</span><span class="stk-l">L1</span>
@@ -1870,35 +1887,38 @@
     'Colton Lilge':     'https://www.eliteprospects.com/player/1195818/colton-lilge'
   };
 
-  // Player stats (GP/G/A/P) keyed by name — render on each card between birth year and EP link.
-  const playerStats = {
-    'Brody Howk':       { gp: 5, g: 4, a: 2, p: 6 },
-    'Caden Mackeen':    { gp: 6, g: 2, a: 4, p: 6 },
-    'John Bishop':      { gp: 5, g: 3, a: 2, p: 5 },
-    'Landon Macdonald': { gp: 6, g: 3, a: 2, p: 5 },
-    'Austin Bertsch':   { gp: 5, g: 3, a: 1, p: 4 },
-    'Seth Marx':        { gp: 6, g: 1, a: 3, p: 4 },
-    'Seth Waller':      { gp: 5, g: 2, a: 2, p: 4 },
-    'James Williamson': { gp: 6, g: 1, a: 3, p: 4 },
-    'Nathaniel Crom':   { gp: 5, g: 2, a: 1, p: 3 },
-    'Cale Rhodes':      { gp: 5, g: 0, a: 3, p: 3 },
-    'Gabriel Gagnon':   { gp: 6, g: 1, a: 1, p: 2 },
-    'Anthony Trujillo': { gp: 4, g: 2, a: 0, p: 2 },
-    'Liam Tutor':       { gp: 4, g: 1, a: 1, p: 2 },
-    'Wyatt Chatterson': { gp: 4, g: 0, a: 1, p: 1 },
-    'Enzo Marseglia':   { gp: 4, g: 1, a: 0, p: 1 },
-    'Logan Stoeckel':   { gp: 6, g: 0, a: 1, p: 1 },
-    'Caleb Danialson':  { gp: 3, g: 0, a: 0, p: 0 },
-    'Everett Lawhorn':  { gp: 3, g: 0, a: 0, p: 0 },
-    'Colton Reuter':    { gp: 3, g: 0, a: 0, p: 0 },
-    'Ean Reuter':       { gp: 2, g: 0, a: 0, p: 0 }
-  };
-
-  // Goalie stats keyed by name — different column set than skaters.
-  const goalieStats = {
-    'David Carey':  { gp: 5, gaa: '3.77',  sv: '.913', w: 3, l: 0, t: 1 },
-    'Colton Lilge': { gp: 2, gaa: '11.54', sv: '.836', w: 0, l: 2, t: 0 }
-  };
+  // playerStats / goalieStats are now SCRAPED from the auto-managed stats tables
+  // on page load. The auto-update script regenerates the tables daily from the
+  // league API; reading them here means the per-card stat rows and the top-5
+  // "standout" highlight automatically stay in sync — there's only one source
+  // of truth.
+  //
+  // Skaters table layout (matches Python build_skater_block):
+  //   jersey, name, GP, G, A, P, PIM, PPG, GWG
+  // Goalies table layout:
+  //   jersey, name, GP, GS, SA, GA, GAA, SV%, W, L, T
+  function scrapeStatsTable(selector, fields) {
+    const out = {};
+    document.querySelectorAll(selector + ' .stats-row').forEach(row => {
+      if (row.classList.contains('stats-head')) return;
+      const cells = row.children;
+      const nameCell = row.querySelector('.pn');
+      if (!nameCell) return;
+      const name = nameCell.textContent.trim();
+      const obj = {};
+      fields.forEach((key, idx) => {
+        // +2 because cells[0] is .jr (jersey) and cells[1] is .pn (name).
+        const cell = cells[idx + 2];
+        if (cell) obj[key] = cell.textContent.trim();
+      });
+      out[name] = obj;
+    });
+    return out;
+  }
+  const playerStats = scrapeStatsTable('.stats-table.skaters',
+    ['gp', 'g', 'a', 'p', 'pim', 'ppg', 'gwg']);
+  const goalieStats = scrapeStatsTable('.stats-table.goalies',
+    ['gp', 'gs', 'sa', 'ga', 'gaa', 'sv', 'w', 'l', 't']);
 
   // Slugify a name into a filename stem: "John Bishop" → "john-bishop".
   // Matches Elite Prospects' own URL convention and keeps filenames predictable.
@@ -2024,15 +2044,25 @@
     });
 
     // Scroll: trigger when a section's top crosses below the sticky nav.
-    // rootMargin shrinks the viewport to a thin strip just under the nav, so
-    // the moment a section enters that strip it becomes the active one.
+    // rootMargin shrinks the viewport to a thin strip just under the nav.
+    // Reading --nav-h from CSS keeps this in sync if the nav height changes.
     if ('IntersectionObserver' in window) {
+      const navH = parseInt(
+        getComputedStyle(document.documentElement).getPropertyValue('--nav-h')
+      ) || 64;
+      // Throttle: skip the work if the active section hasn't changed.
+      let currentId = null;
+      const setActiveOnce = (id) => {
+        if (id === currentId) return;
+        currentId = id;
+        setActive(id);
+      };
       const observer = new IntersectionObserver(entries => {
         entries.forEach(e => {
-          if (e.isIntersecting) setActive(e.target.id);
+          if (e.isIntersecting) setActiveOnce(e.target.id);
         });
       }, {
-        rootMargin: '-64px 0px -75% 0px',
+        rootMargin: `-${navH}px 0px -75% 0px`,
         threshold: 0,
       });
       sections.forEach(s => observer.observe(s));
@@ -2177,12 +2207,18 @@
       document.addEventListener('keydown', e => {
         if (sheet.hasAttribute('hidden')) return;
         if (e.key === 'Escape') { closeSheet(); return; }
-        // Focus trap: Tab cycles between the first option and the cancel button.
+        // Focus trap: Tab cycles between first option and the cancel button.
+        // If focus is currently outside the sheet, redirect it in on next Tab.
         if (e.key === 'Tab') {
           const list = sheet.querySelectorAll('button, a[href]');
           if (!list.length) return;
           const first = list[0], last = list[list.length - 1];
           const active = document.activeElement;
+          if (!sheet.contains(active)) {
+            e.preventDefault();
+            (e.shiftKey ? last : first).focus();
+            return;
+          }
           if (e.shiftKey && active === first) { e.preventDefault(); last.focus(); }
           else if (!e.shiftKey && active === last) { e.preventDefault(); first.focus(); }
         }
@@ -2405,11 +2441,18 @@
       if (!isOpen) return;
       if (e.key === 'Escape') { setOpen(false); btn.focus(); return; }
       // Focus trap: Tab cycles within the menu's focusable elements.
+      // If focus somehow ended up outside the menu (e.g. user clicked away
+      // without closing), redirect it back in on the next Tab.
       if (e.key === 'Tab') {
         const list = focusables();
         if (!list.length) return;
         const first = list[0], last = list[list.length - 1];
         const active = document.activeElement;
+        if (!menu.contains(active)) {
+          e.preventDefault();
+          (e.shiftKey ? last : first).focus();
+          return;
+        }
         if (e.shiftKey && active === first) { e.preventDefault(); last.focus(); }
         else if (!e.shiftKey && active === last) { e.preventDefault(); first.focus(); }
       }

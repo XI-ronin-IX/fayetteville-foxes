@@ -359,9 +359,15 @@ def normalize_venue(s: str) -> str:
     return re.sub(r"\b(\w+)\s+\1\b", r"\1", s).strip()
 
 
-def parse_game_date(date_str: str) -> date:
-    """Parse 'Apr 25, 2026' (game.date field) into a date object."""
-    return datetime.strptime(date_str, "%b %d, %Y").date()
+def parse_game_date(date_str: str) -> date | None:
+    """Parse 'Apr 25, 2026' (game.date field) into a date object, or return
+    None on malformed input. The league API occasionally produces funky
+    strings; a single bad date shouldn't kill the entire daily refresh.
+    """
+    try:
+        return datetime.strptime((date_str or "").strip(), "%b %d, %Y").date()
+    except (ValueError, TypeError):
+        return None
 
 
 def fmt_short_date(d: date) -> str:
@@ -511,9 +517,10 @@ def build_schedule_list_block(
             g["game"]["homeTeam"]["name"],
             g["game"]["visitorTeam"]["name"],
         )
+        and parse_game_date(g["game"]["date"]) is not None
     ]
     foxes_played.sort(
-        key=lambda g: parse_game_date(g["game"]["date"]),
+        key=lambda g: parse_game_date(g["game"]["date"]) or date.min,
         reverse=True,
     )
 
@@ -525,6 +532,8 @@ def build_schedule_list_block(
             g["visitorTeam" if is_home else "homeTeam"]["name"],
         )
         d = parse_game_date(g["date"])
+        if d is None:
+            continue  # skip rows with unparseable dates
         time_24 = fmt_24h(g["time"])
         prefix = "vs" if is_home else "@"
         venue = normalize_venue(g.get("location", "TBD"))
@@ -553,6 +562,8 @@ def build_schedule_list_block(
         opp = TEAM_DISPLAY.get(opp_team["name"], opp_team["name"])
         venue = normalize_venue(gm.get("location", "TBD"))
         d = parse_game_date(gm["date"])
+        if d is None:
+            continue  # unparseable date — skip the row rather than crash
         prefix = "vs" if is_home else "@"
         # Goal counts run through int_or so they're guaranteed to be safe ints,
         # but escaping costs nothing and protects future readers.
@@ -581,15 +592,22 @@ def build_schedule_list_block(
 
 
 def build_ticker_block(played: list[dict], n: int = 6) -> str:
-    """Build the .ticker-track inner content (items + dots, duplicated for loop)."""
+    """Build the .ticker-track inner content (items + dots, duplicated for loop).
+
+    Skips games with unparseable dates and games missing a finalScore — both
+    are sometimes present in the API for upcoming games that haven't been
+    scored yet but accidentally appear in the played endpoint.
+    """
     foxes_played = [
         g for g in played
         if FAYETTEVILLE_TEAM_NAME in (
             g["game"]["homeTeam"]["name"],
             g["game"]["visitorTeam"]["name"],
         )
+        and parse_game_date(g["game"]["date"]) is not None
+        and g["game"].get("finalScore") is not None
     ]
-    foxes_played.sort(key=lambda g: parse_game_date(g["game"]["date"]), reverse=True)
+    foxes_played.sort(key=lambda g: parse_game_date(g["game"]["date"]) or date.min, reverse=True)
     foxes_played = foxes_played[:n]
 
     items: list[str] = []
@@ -601,6 +619,8 @@ def build_ticker_block(played: list[dict], n: int = 6) -> str:
         fox_goals = int_or(gm["finalScore"]["homeGoals" if is_home else "visitorGoals"])
         opp_goals = int_or(gm["finalScore"]["visitorGoals" if is_home else "homeGoals"])
         d = parse_game_date(gm["date"])
+        if d is None:
+            continue
         if fox_goals > opp_goals:
             indicator_class = "w"
             indicator = "W"
@@ -608,7 +628,7 @@ def build_ticker_block(played: list[dict], n: int = 6) -> str:
             indicator_class = "l"
             indicator = "L"
         else:
-            indicator_class = "l"
+            indicator_class = "t"
             indicator = "T"
         items.append(
             f'    <span class="ticker-item">'
@@ -665,6 +685,8 @@ def build_matchup_block(
     opp_place = ("Home" if not is_home else "Away · @") + (f" · {venue}" if not is_home else f" {venue}")
 
     d = parse_game_date(g["date"])
+    if d is None:
+        return None  # unparseable date — leave the existing matchup block alone
     iso_target = fmt_iso_eastern(d, g["time"])
     drop_24 = fmt_24h(g["time"])
     long_date = fmt_long_date(d)
@@ -773,45 +795,78 @@ REGION_RE_TEMPLATE = (
 
 def replace_region(html: str, name: str, new_inner: str) -> str:
     """Replace inner content between BEGIN/END markers, preserving the
-    original indentation of the END marker so we don't drift."""
+    original indentation of the END marker so we don't drift.
+
+    Defensively requires *exactly one* BEGIN/END pair per region. If a marker
+    was lost in a bad merge or a region was accidentally duplicated, this
+    raises rather than silently corrupting hand-edited content outside the
+    intended span.
+    """
     pattern = re.compile(REGION_RE_TEMPLATE.format(name=re.escape(name)), re.DOTALL)
+    matches = list(pattern.finditer(html))
+    if len(matches) != 1:
+        # Look for the markers individually to give a useful error.
+        begin_count = len(re.findall(rf"<!--\s*BEGIN auto:{re.escape(name)}\s*-->", html))
+        end_count = len(re.findall(rf"<!--\s*END auto:{re.escape(name)}\s*-->", html))
+        raise RuntimeError(
+            f"region {name!r}: expected exactly 1 BEGIN/END pair, "
+            f"found {begin_count} BEGIN marker(s) and {end_count} END marker(s) "
+            f"that pair into {len(matches)} region(s). "
+            f"Refusing to write to avoid corrupting hand-edited content."
+        )
     def _sub(m: re.Match) -> str:
         begin, _inner, end_indent, end = m.group(1), m.group(2), m.group(3), m.group(4)
         return f"{begin}\n{new_inner}\n{end_indent}{end}"
     new_html, count = pattern.subn(_sub, html, count=1)
-    if count == 0:
-        raise RuntimeError(
-            f"region marker not found in index.html: <!-- BEGIN auto:{name} -->"
-        )
     return new_html
 
 
+def _extract_region_body(html: str, name: str) -> str:
+    """Return just the content between <!-- BEGIN auto:NAME --> and the matching
+    END marker, or '' if the region isn't found. Used by extract_existing_*
+    helpers so they only look inside the right table (no cross-contamination
+    between skaters, goalies, and standings regions)."""
+    m = re.search(
+        rf"<!--\s*BEGIN auto:{re.escape(name)}\s*-->(.*?)<!--\s*END auto:{re.escape(name)}\s*-->",
+        html,
+        re.DOTALL,
+    )
+    return m.group(1) if m else ""
+
+
 def extract_existing_jerseys(html: str) -> dict[str, str]:
-    """Pull `name -> jersey` from the existing skaters table so we can fall
-    back if the API jersey field is missing for a player."""
+    """Pull `name -> jersey` from the existing skaters AND goalies tables so we
+    can fall back if the API jersey field is missing or wrong for a player.
+    Scoped to those auto regions so team-rank cells in standings ('Fayetteville'
+    with rank 2, etc.) don't pollute the mapping.
+    """
     out: dict[str, str] = {}
     pattern = re.compile(
         r'<span class="jr">(\d+)</span><span class="pn">([^<]+)</span>'
     )
-    for jr, name in pattern.findall(html):
-        out[name.strip()] = jr
+    for region in ("skaters", "goalies"):
+        body = _extract_region_body(html, region)
+        for jr, name in pattern.findall(body):
+            out[name.strip()] = jr
     return out
 
 
 def extract_existing_svpct(html: str) -> dict[str, str]:
-    """Pull `name -> svpct` from the existing goalies table for first-run preserve.
+    """Pull `name -> svpct` from the existing goalies table. Scoped to the
+    goalies auto-region so it can't match a row in standings/skaters even if
+    those ever change column counts in the future.
 
     Goalie row layout: jr, pn, GP, GS, SA, GA, GAA(.pts), SV%, W, L, T
-    So the SV% is the span immediately following the .pts (GAA) span.
     """
     out: dict[str, str] = {}
+    body = _extract_region_body(html, "goalies")
     pattern = re.compile(
         r'<span class="jr">\d+</span><span class="pn">([^<]+)</span>'
         r'(?:<span>[^<]*</span>){4}'        # GP, GS, SA, GA
         r'<span class="pts">[^<]*</span>'    # GAA
         r'<span>([.\d]+)</span>'             # SV%
     )
-    for name, svpct in pattern.findall(html):
+    for name, svpct in pattern.findall(body):
         out[name.strip()] = svpct
     return out
 
@@ -846,7 +901,10 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--dry-run", action="store_true",
                    help="Print diff but don't write")
     p.add_argument("--check-played", action="store_true",
-                   help="Exit 0 only if a Foxes game was played today")
+                   help="Probe-only mode for the cron gate. Exit codes: "
+                        "0 = a Foxes game was played today (proceed with full update); "
+                        "1 = no Foxes game today (skip full update); "
+                        "2 = API error or other failure (treat as workflow failure)")
     p.add_argument("--index", default="index.html",
                    help="Path to index.html (default: ./index.html)")
     args = p.parse_args(argv)
@@ -857,15 +915,24 @@ def main(argv: list[str] | None = None) -> int:
         print(f"index.html not found at {index_path}", file=sys.stderr)
         return 2
 
+    # --check-played mode: isolate API failures so the cron gate can distinguish
+    # "no game today" (rc=1, silent skip) from "API broke" (rc=2, workflow fails
+    # and emails us).
+    if args.check_played:
+        try:
+            print(f"[fetch] played-games (probe)", flush=True)
+            played = fetch_played_games()
+            played_today = did_foxes_play_today(played)
+        except Exception as e:
+            print(f"[error] check-played failed: {e!r}", file=sys.stderr)
+            return 2
+        print(f"foxes-played-today: {played_today}")
+        return 0 if played_today else 1
+
     print(f"[fetch] standings", flush=True)
     standings = fetch_standings()
     print(f"[fetch] played-games", flush=True)
     played = fetch_played_games()
-
-    if args.check_played:
-        played_today = did_foxes_play_today(played)
-        print(f"foxes-played-today: {played_today}")
-        return 0 if played_today else 1
 
     print(f"[fetch] upcoming-schedule", flush=True)
     upcoming = fetch_upcoming_games()

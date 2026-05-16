@@ -59,12 +59,20 @@ jobs:
           python scripts/update_data.py --check-played
           rc=$?
           set -e
-          if [ "$rc" -ne 0 ]; then
-            echo "result=skip" >> "$GITHUB_OUTPUT"
-            echo "No Foxes game played today — exiting without changes."
-          else
-            echo "result=run" >> "$GITHUB_OUTPUT"
-          fi
+          # Exit codes: 0=played, 1=no game (skip silently), 2=API error (fail).
+          case "$rc" in
+            0)
+              echo "result=run" >> "$GITHUB_OUTPUT"
+              ;;
+            1)
+              echo "result=skip" >> "$GITHUB_OUTPUT"
+              echo "No Foxes game played today — exiting without changes."
+              ;;
+            *)
+              echo "::error::check-played probe failed (rc=$rc) — API may be down."
+              exit "$rc"
+              ;;
+          esac
 
       - name: Run updater
         if: ${{ github.event_name != 'schedule' || steps.gate.outputs.result == 'run' }}
