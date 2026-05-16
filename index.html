@@ -1284,7 +1284,7 @@
     <div class="section-head">
       <div>
         <div class="section-label">02 / Next Puck Drop</div>
-        <h2 class="section-title display">Sunday morning. <em>Wear orange.</em></h2>
+        <h2 class="section-title display"><span data-target="next-game-phrase">Wednesday night</span>. <em>Wear orange.</em></h2>
       </div>
       <p class="section-lede">Warmups start at <b data-target="warmup-time">06:45</b> — one hour before the <b data-target="puckdrop-time">07:45</b> puck drop. After three periods we expect you to have lost your voice.</p>
     </div>
@@ -2367,6 +2367,27 @@
     document.querySelectorAll('[data-target="warmup-time"]').forEach(el => {
       el.textContent = warmText;
     });
+
+    // "02 / Next Puck Drop" section title — derived from the same matchup-meta
+    // source. Day-of-week comes from the abbreviated form in the date cell;
+    // time-of-day buckets the puck-drop hour into morning/afternoon/night.
+    (function syncNextGamePhrase(){
+      const target = document.querySelector('[data-target="next-game-phrase"]');
+      const dateEl = document.querySelector('[data-meta="date"]');
+      if (!target || !dateEl) return;
+      const dayShort = (dateEl.textContent.split('·')[0] || '').trim();
+      const dayMap = {
+        Sun: 'Sunday',  Mon: 'Monday',   Tue: 'Tuesday',
+        Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday'
+      };
+      const dayFull = dayMap[dayShort] || dayShort;
+      // Bucket the puck-drop hour. < noon: morning. Noon-4:59pm: afternoon.
+      // 5pm and later: night. (Aligns with the user's labeling — 6:30 PM = night.)
+      let part = 'night';
+      if (hh < 12) part = 'morning';
+      else if (hh < 17) part = 'afternoon';
+      if (dayFull) target.textContent = dayFull + ' ' + part;
+    })();
   })();
 
   // Sync the Foxes record from the canonical standings row to every record display.
