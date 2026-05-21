@@ -71,7 +71,7 @@
   @media(max-width:720px){.wrap{padding:0 20px;}}
 
   /* Leave room for the sticky nav when jumping to in-page anchors (nav-h + 16px breathing room). */
-  #team,#schedule,#roster,#stats,#standings,#scoring,#coaches,#gameday{scroll-margin-top:calc(var(--nav-h) + 16px);}
+  #team,#schedule,#playoffs,#roster,#stats,#standings,#scoring,#coaches,#gameday{scroll-margin-top:calc(var(--nav-h) + 16px);}
 
   .display{
     font-family:'Saira Condensed',sans-serif;
@@ -1026,6 +1026,70 @@
   .foot-bottom .seal{color:var(--orange);}
   .foot-bottom .ver{color:var(--smoke-2);}
 
+  /* ───────── PLAYOFF BRACKET ───────── */
+  .bracket{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:48px;
+    align-items:center;
+  }
+  @media(max-width:720px){.bracket{grid-template-columns:1fr;gap:32px;}}
+  .bracket-round{display:flex;flex-direction:column;gap:32px;}
+  .bracket-round.final{align-self:center;}
+  .bracket-label{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;letter-spacing:0.18em;text-transform:uppercase;
+    color:var(--orange);
+    display:inline-flex;align-items:center;gap:12px;
+  }
+  .bracket-label::before{content:"";width:24px;height:1px;background:var(--orange);}
+  .bracket-match{
+    background:var(--ink);
+    border:1px solid var(--line-strong);
+    position:relative;
+  }
+  .bracket-round.final .bracket-match{
+    border:1px solid var(--orange);
+    box-shadow:0 0 0 1px rgba(255,85,0,0.18), 0 18px 40px -12px rgba(255,85,0,0.35);
+    background:linear-gradient(180deg, rgba(255,85,0,0.06), transparent 60%), var(--ink);
+  }
+  .bracket-team{
+    display:grid;
+    grid-template-columns:36px 44px 1fr;
+    align-items:center;
+    gap:14px;
+    padding:14px 18px;
+    border-bottom:1px solid var(--line);
+  }
+  .bracket-team:last-child{border-bottom:none;}
+  .bracket-team .seed{
+    font-family:'Saira Condensed',sans-serif;font-weight:900;font-style:italic;
+    font-size:28px;color:var(--orange);line-height:1;letter-spacing:-0.02em;
+    text-align:center;
+  }
+  .bracket-team .logo{
+    width:44px;height:36px;display:flex;align-items:center;justify-content:center;
+    background:var(--ink-2);border:1px solid var(--line);padding:2px;
+  }
+  .bracket-team .logo img{width:100%;height:100%;object-fit:contain;display:block;}
+  .bracket-team .name{
+    font-family:'Saira Condensed',sans-serif;font-weight:900;font-style:italic;
+    font-size:20px;color:var(--bone);line-height:1.05;letter-spacing:-0.005em;
+  }
+  .bracket-team.tbd{color:var(--smoke-2);}
+  .bracket-team.tbd .seed{color:var(--smoke-2);}
+  .bracket-team.tbd .name{
+    color:var(--smoke-2);font-weight:500;font-style:normal;
+    font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.14em;
+    text-transform:uppercase;
+  }
+  /* Highlight Foxes if they're in the bracket */
+  .bracket-team.foxes{
+    background:linear-gradient(90deg, rgba(255,85,0,0.10), rgba(255,85,0,0.02) 60%, transparent);
+    border-left:2px solid var(--orange);
+  }
+  .bracket-team.foxes .name{color:var(--orange);}
+
   /* ───────── FADE-IN ───────── */
   @media (prefers-reduced-motion: no-preference){
     .rise{opacity:0;transform:translateY(14px);animation:rise 1s cubic-bezier(.2,.7,.2,1) forwards;}
@@ -1117,6 +1181,7 @@
     <nav class="nav-links">
       <a href="#team" class="active">Team</a>
       <a href="#schedule">Schedule</a>
+      <a href="#playoffs">Playoffs</a>
       <a href="#roster">Roster</a>
       <a href="#stats">Stats</a>
       <a href="#gameday">Gameday</a>
@@ -1135,6 +1200,7 @@
   <nav class="mobile-menu" id="mobile-menu" aria-label="Mobile navigation">
     <a class="mm-item" href="#roster">Roster</a>
     <a class="mm-item" href="#schedule">Schedule</a>
+    <a class="mm-item" href="#playoffs">Playoffs</a>
     <a class="mm-item" href="#standings">Standings</a>
     <a class="mm-item" href="#scoring">Stats</a>
     <a class="mm-item" href="#coaches">Coaches</a>
@@ -1404,6 +1470,51 @@
         <div class="result"><span style="color:var(--smoke);font-weight:700;">T 4–4</span></div>
       </div>
       <!-- END auto:schedule-list -->
+    </div>
+  </div>
+</section>
+
+<!-- PLAYOFFS -->
+<section class="section" id="playoffs">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <div class="section-label">02b / Playoffs</div>
+        <h2 class="section-title display">Road to <em>the cup.</em></h2>
+      </div>
+      <p class="section-lede">Single-elimination bracket. Top four seeds advance — <b>#1 vs #4</b> and <b>#2 vs #3</b> in the semifinals; winners meet for the championship. Seeds populate live from the standings.</p>
+    </div>
+    <div class="bracket">
+      <div class="bracket-round semis">
+        <div class="bracket-label">Semifinals</div>
+        <div class="bracket-match">
+          <div class="bracket-team" data-seed="1">
+            <span class="seed">1</span><span class="logo"></span><span class="name">—</span>
+          </div>
+          <div class="bracket-team" data-seed="4">
+            <span class="seed">4</span><span class="logo"></span><span class="name">—</span>
+          </div>
+        </div>
+        <div class="bracket-match">
+          <div class="bracket-team" data-seed="2">
+            <span class="seed">2</span><span class="logo"></span><span class="name">—</span>
+          </div>
+          <div class="bracket-team" data-seed="3">
+            <span class="seed">3</span><span class="logo"></span><span class="name">—</span>
+          </div>
+        </div>
+      </div>
+      <div class="bracket-round final">
+        <div class="bracket-label">Championship</div>
+        <div class="bracket-match">
+          <div class="bracket-team tbd">
+            <span class="seed">—</span><span class="logo"></span><span class="name">Semi 1 Winner</span>
+          </div>
+          <div class="bracket-team tbd">
+            <span class="seed">—</span><span class="logo"></span><span class="name">Semi 2 Winner</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -2442,6 +2553,69 @@
         el.innerHTML = '#' + rank + '<span class="sub">/ ' + totalTeams + '</span>';
       });
     }
+  })();
+
+  // Populate the playoff bracket from the standings table. Top-4 seeds slot
+  // into the semifinals; the championship row stays "TBD" until games are
+  // played and we can hook in winner-advancement. Refreshes automatically
+  // whenever the standings table is regenerated by the daily updater.
+  (function(){
+    const standingsTable = document.querySelector('.stats-table.standings');
+    const bracket = document.querySelector('.bracket');
+    if (!standingsTable || !bracket) return;
+
+    // Scrape each standings row → {rank, name, logoPng, logoWebp, isFoxes}
+    const rows = standingsTable.querySelectorAll('.stats-row:not(.stats-head)');
+    const teams = [];
+    rows.forEach(row => {
+      const rank = parseInt(row.children[0] && row.children[0].textContent.trim(), 10);
+      const pn = row.querySelector('.pn');
+      if (Number.isNaN(rank) || !pn) return;
+      // Team name is the first text node inside .pn (before the <picture>).
+      const nameNode = Array.from(pn.childNodes).find(n => n.nodeType === 3 && n.textContent.trim());
+      const name = nameNode ? nameNode.textContent.trim() : pn.textContent.trim();
+      const img = pn.querySelector('img');
+      const source = pn.querySelector('source[type="image/webp"]');
+      teams.push({
+        rank,
+        name,
+        logoPng:  img ? img.getAttribute('src') : '',
+        logoWebp: source ? source.getAttribute('srcset') : '',
+        isFoxes:  row.classList.contains('us'),
+      });
+    });
+    teams.sort((a, b) => a.rank - b.rank);
+
+    // Slot top 4 into the bracket
+    const bySeed = {};
+    teams.slice(0, 4).forEach(t => { bySeed[t.rank] = t; });
+    bracket.querySelectorAll('.bracket-team[data-seed]').forEach(slot => {
+      const seed = parseInt(slot.dataset.seed, 10);
+      const team = bySeed[seed];
+      if (!team) return;
+      const nameEl = slot.querySelector('.name');
+      const logoEl = slot.querySelector('.logo');
+      if (nameEl) nameEl.textContent = team.name;
+      if (logoEl) {
+        logoEl.innerHTML = '';
+        const pic = document.createElement('picture');
+        if (team.logoWebp) {
+          const src = document.createElement('source');
+          src.type = 'image/webp';
+          src.setAttribute('srcset', team.logoWebp);
+          pic.appendChild(src);
+        }
+        if (team.logoPng) {
+          const img = document.createElement('img');
+          img.src = team.logoPng;
+          img.alt = team.name;
+          img.loading = 'lazy';
+          pic.appendChild(img);
+        }
+        logoEl.appendChild(pic);
+      }
+      if (team.isFoxes) slot.classList.add('foxes');
+    });
   })();
 
   // Mobile hamburger menu — toggle dropdown, close on link click / outside click / Escape.
