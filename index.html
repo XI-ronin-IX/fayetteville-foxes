@@ -1182,7 +1182,7 @@
       </div>
       <div class="hero-stat">
         <span class="mono label">League Standing</span>
-        <span class="val">#2<span class="sub">/ 8</span></span>
+        <span class="val" data-foxes-rank>#2<span class="sub">/ 8</span></span>
       </div>
     </div>
 
@@ -2400,11 +2400,18 @@
     if (!usRow) return;
     // Standings row layout: rank, team, GP, W, L, T, PTS, GF, GA, DIFF, STK
     const cells = usRow.children;
+    const rank = parseInt(cells[0] && cells[0].textContent, 10);
     const gp = parseInt(cells[2] && cells[2].textContent, 10);
     const w  = parseInt(cells[3] && cells[3].textContent, 10);
     const l  = parseInt(cells[4] && cells[4].textContent, 10);
     const t  = parseInt(cells[5] && cells[5].textContent, 10);
     if ([gp, w, l, t].some(Number.isNaN)) return;
+
+    // Total team count: every .stats-row inside the standings table that isn't
+    // the header. Stays accurate even if a team is added or dropped from the league.
+    const totalTeams = document.querySelectorAll(
+      '.stats-table.standings .stats-row:not(.stats-head)'
+    ).length;
 
     const numWords = ['zero','one','two','three','four','five','six','seven','eight','nine',
                       'ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen',
@@ -2430,6 +2437,11 @@
     document.querySelectorAll('[data-foxes-gp]').forEach(el => {
       el.textContent = String(gp);
     });
+    if (!Number.isNaN(rank) && totalTeams > 0) {
+      document.querySelectorAll('[data-foxes-rank]').forEach(el => {
+        el.innerHTML = '#' + rank + '<span class="sub">/ ' + totalTeams + '</span>';
+      });
+    }
   })();
 
   // Mobile hamburger menu — toggle dropdown, close on link click / outside click / Escape.
