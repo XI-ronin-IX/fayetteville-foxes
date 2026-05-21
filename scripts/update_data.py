@@ -949,6 +949,107 @@ def extract_existing_jerseys(html: str) -> dict[str, str]:
     return out
 
 
+def extract_existing_playoff_results(html: str) -> dict:
+    """Read the current playoff-results JSON from its auto-region.
+
+    Returns {} if the region is missing or the JSON is malformed; that's
+    a safe default since the merge step below will then fall back to
+    auto-detected values (or null) for every field.
+    """
+    body = _extract_region_body(html, "playoff-results")
+    if not body:
+        return {}
+    m = re.search(
+        r'<script[^>]*id="playoff-results"[^>]*>(.*?)</script>',
+        body,
+        re.DOTALL,
+    )
+    if not m:
+        return {}
+    try:
+        return json.loads(m.group(1).strip())
+    except (ValueError, TypeError):
+        return {}
+
+
+def detect_playoff_results(
+    standings: list[dict], played: list[dict]
+) -> dict[str, str | None]:
+    """Inspect played games for playoffs (by `game.type` keywords) and figure
+    out winners. Identifies which slot a game belongs to by the team-rank
+    pair of its two participants: {#1, #4} = semi 1; {#2, #3} = semi 2;
+    anything else (only top-4 pairing matters, so this is championship in
+    practice) goes to the champion slot.
+
+    Returns a dict with semi1Winner / semi2Winner / champion fields, each
+    either a display name string or None if no decided game was found.
+    """
+    rank_by_team_full = {t["team"]: t["rank"] for t in standings}
+    out: dict[str, str | None] = {
+        "semi1Winner": None,
+        "semi2Winner": None,
+        "champion":    None,
+    }
+
+    # Sort played games chronologically so later games (championship) win
+    # over earlier ones in any edge-case overlap.
+    sorted_played = sorted(
+        played,
+        key=lambda g: g.get("game", {}).get("scheduleStartTime") or "",
+    )
+
+    for g in sorted_played:
+        gm = g.get("game", {})
+        if not looks_like_playoff(gm.get("type")):
+            continue
+        final = gm.get("finalScore")
+        if not final:
+            continue
+        home_name = gm.get("homeTeam", {}).get("name")
+        visitor_name = gm.get("visitorTeam", {}).get("name")
+        home_goals = int_or(final.get("homeGoals"))
+        visitor_goals = int_or(final.get("visitorGoals"))
+        if home_goals == visitor_goals:
+            continue  # tie — no winner; bracket can't advance
+        winner_full = home_name if home_goals > visitor_goals else visitor_name
+        winner_disp = TEAM_DISPLAY.get(winner_full, winner_full)
+
+        # Identify the bracket slot via team-rank pair (regular-season seeds).
+        home_rank = rank_by_team_full.get(home_name)
+        visitor_rank = rank_by_team_full.get(visitor_name)
+        if home_rank is None or visitor_rank is None:
+            continue
+        pair = tuple(sorted([home_rank, visitor_rank]))
+        if pair == (1, 4):
+            out["semi1Winner"] = winner_disp
+        elif pair == (2, 3):
+            out["semi2Winner"] = winner_disp
+        else:
+            # Any other pairing of playoff teams is the championship.
+            out["champion"] = winner_disp
+
+    return out
+
+
+def build_playoff_results_block(merged: dict) -> str:
+    """Generate the <script type="application/json"> block for the auto-region.
+
+    Always emits the three canonical fields in stable order for clean diffs;
+    other keys in `merged` are dropped.
+    """
+    canonical = {
+        "semi1Winner": merged.get("semi1Winner"),
+        "semi2Winner": merged.get("semi2Winner"),
+        "champion":    merged.get("champion"),
+    }
+    payload = json.dumps(canonical)
+    return (
+        '    <script type="application/json" id="playoff-results">\n'
+        f'{payload}\n'
+        '    </script>'
+    )
+
+
 def extract_existing_svpct(html: str) -> dict[str, str]:
     """Pull `name -> svpct` from the existing goalies table. Scoped to the
     goalies auto-region so it can't match a row in standings/skaters even if
@@ -1056,12 +1157,26 @@ def main(argv: list[str] | None = None) -> int:
     if svp_overrides:
         print(f"  preserving manual SV% for {list(svp_overrides)}")
 
+    # Playoff results: merge auto-detected winners with whatever's already in
+    # the JSON block (manual overrides win when auto-detect comes up empty).
+    existing_playoffs = extract_existing_playoff_results(html_old)
+    auto_playoffs = detect_playoff_results(standings, played)
+    merged_playoffs = {
+        key: (auto_playoffs.get(key) if auto_playoffs.get(key) is not None
+              else existing_playoffs.get(key))
+        for key in ("semi1Winner", "semi2Winner", "champion")
+    }
+    detected_now = [k for k, v in auto_playoffs.items() if v is not None]
+    if detected_now:
+        print(f"  detected playoff winners from API: {detected_now}")
+
     standings_block = build_standings_block(standings)
     skater_block = build_skater_block(skaters, existing_jerseys)
     goalie_block = build_goalie_block(goalies, svp_overrides, existing_jerseys)
     schedule_list_block = build_schedule_list_block(upcoming, played)
     ticker_block = build_ticker_block(played)
     matchup_block = build_matchup_block(upcoming, standings, played)
+    playoff_results_block = build_playoff_results_block(merged_playoffs)
 
     html_new = html_old
     html_new = replace_region(html_new, "standings", standings_block)
@@ -1072,6 +1187,7 @@ def main(argv: list[str] | None = None) -> int:
         html_new = replace_region(html_new, "ticker", ticker_block)
     if matchup_block:
         html_new = replace_region(html_new, "matchup", matchup_block)
+    html_new = replace_region(html_new, "playoff-results", playoff_results_block)
 
     if html_new == html_old:
         print("[result] no changes — exiting without writing")

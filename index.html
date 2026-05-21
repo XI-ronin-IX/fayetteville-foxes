@@ -1530,6 +1530,11 @@
         </div>
       </div>
     </div>
+    <!-- BEGIN auto:playoff-results -->
+    <script type="application/json" id="playoff-results">
+{"semi1Winner": null, "semi2Winner": null, "champion": null}
+    </script>
+    <!-- END auto:playoff-results -->
   </div>
 </section>
 
@@ -2599,24 +2604,23 @@
   })();
 
   // Populate the playoff bracket from the standings table. Top-4 seeds slot
-  // into the semifinals; the championship row stays "TBD" until you fill in
-  // PLAYOFF_RESULTS below.
+  // into the semifinals; the championship row stays "TBD" until winners are
+  // set in the playoff-results JSON region inside the playoffs section.
   //
-  // ─── EDIT THIS WHEN PLAYOFF GAMES FINISH ────────────────────────────────
-  // Set each field to the team name as it appears in the standings table
-  // (e.g. "Durham", "Fayetteville", "Chapel Hill"). Case-insensitive.
-  //   • semi1Winner — winner of the #1 vs #4 semifinal
-  //   • semi2Winner — winner of the #2 vs #3 semifinal
-  //   • champion    — winner of the championship game
-  // Leave any field null to keep that slot showing "TBD". When a winner is
-  // set, its losing opponent in that round dims to indicate elimination.
-  // ────────────────────────────────────────────────────────────────────────
+  // The bot auto-populates that JSON when the API exposes played playoff
+  // games (matched to bracket slots by team-rank pairing #1+#4 = semi1,
+  // #2+#3 = semi2, anything else = championship). You can also edit the
+  // JSON manually for any field the bot hasn't detected — manual values
+  // are preserved on bot re-runs as long as auto-detection for that field
+  // is still null.
   (function(){
-    const PLAYOFF_RESULTS = {
-      semi1Winner: null,
-      semi2Winner: null,
-      champion:    null,
-    };
+    // Load PLAYOFF_RESULTS from the auto-managed JSON script tag.
+    const _resultsEl = document.getElementById('playoff-results');
+    const PLAYOFF_RESULTS = { semi1Winner: null, semi2Winner: null, champion: null };
+    if (_resultsEl) {
+      try { Object.assign(PLAYOFF_RESULTS, JSON.parse(_resultsEl.textContent)); }
+      catch (_) { /* keep defaults if JSON is bad */ }
+    }
 
     const standingsTable = document.querySelector('.stats-table.standings');
     const bracket = document.querySelector('.bracket');
