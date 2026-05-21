@@ -451,7 +451,11 @@
   }
   @media(max-width:820px){.matchup{grid-template-columns:1fr;padding:40px 24px;gap:28px;}}
   .matchup-side{display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;position:relative;z-index:2;}
-  .matchup-side.home img{width:110px;height:110px;object-fit:contain;filter:drop-shadow(0 10px 30px rgba(255,85,0,0.25));}
+  /* Lock both logos to an identical 170x170 box with object-fit:contain so
+     neither is cropped and the rows below (.place, .team-name, .record) line
+     up no matter what the team logo's native aspect ratio is. */
+  .matchup-side .crest img{width:170px;height:170px;object-fit:contain;display:block;}
+  .matchup-side.home .crest img{filter:drop-shadow(0 10px 30px rgba(255,85,0,0.25));}
   .matchup-side .place{color:var(--smoke);}
   .matchup-side .team-name{
     font-family:'Saira Condensed',sans-serif;font-weight:900;font-style:italic;
@@ -1379,7 +1383,7 @@
       <div class="matchup-side home">
         <span class="crest" style="transform:none;background:var(--black);"><picture>
           <source type="image/webp" srcset="brand_assets/Fayetteville_Fox_Logo_BLK.webp">
-          <img src="brand_assets/Fayetteville_Fox_Logo_BLK.png" alt="Fayetteville Foxes" loading="lazy" style="width:170px;height:auto;display:block;" />
+          <img src="brand_assets/Fayetteville_Fox_Logo_BLK.png" alt="Fayetteville Foxes" loading="lazy" />
         </picture></span>
         <div class="place mono">Playoffs ahead</div>
         <div class="team-name">Fayetteville <em>Foxes</em></div>
