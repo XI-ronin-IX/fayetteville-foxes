@@ -647,6 +647,93 @@ def build_ticker_block(played: list[dict], n: int = 6) -> str:
     return half + "\n    <!-- duplicate for seamless loop -->\n" + half
 
 
+def build_tbd_matchup_block(standings: list[dict]) -> str:
+    """Placeholder matchup card for when there are no upcoming Foxes games
+    in the API (e.g. between the end of the regular season and the league
+    publishing the playoff schedule). Keeps the same DOM shape so the JS
+    sync helpers don't error, but signals 'TBD' via the data attributes
+    and substitutes copy in the visible cells.
+
+    JS readers should treat any value of 'TBD' in data-meta as 'no game
+    scheduled' and adjust their UI accordingly.
+    """
+    by_team = {t["team"]: t for t in standings}
+    fox_st = by_team.get(FAYETTEVILLE_TEAM_NAME, {"w": 0, "l": 0, "t": 0, "rank": "?"})
+    fox_record = fmt_record(fox_st["w"], fox_st["l"], fox_st["t"])
+    return (
+        '      <div class="matchup-side home">\n'
+        '        <span class="crest" style="transform:none;background:var(--black);"><picture>\n'
+        '          <source type="image/webp" srcset="brand_assets/Fayetteville_Fox_Logo_BLK.webp">\n'
+        '          <img src="brand_assets/Fayetteville_Fox_Logo_BLK.png" alt="Fayetteville Foxes" '
+        'loading="lazy" style="width:170px;height:auto;display:block;" />\n'
+        '        </picture></span>\n'
+        '        <div class="place mono">Playoffs ahead</div>\n'
+        '        <div class="team-name">Fayetteville <em>Foxes</em></div>\n'
+        f'        <div class="record" data-foxes-record="dotted">{H(fox_record)}</div>\n'
+        '      </div>\n'
+        '\n'
+        '      <div class="matchup-vs">\n'
+        '        <div class="vs-big">VS</div>\n'
+        '        <div class="kick">Playoffs · Schedule pending</div>\n'
+        '        <div class="count" id="countdown" aria-live="off">\n'
+        '          <span class="seg"><span class="num" data-cd="d">—</span>'
+        '<span class="u">: Days</span></span>\n'
+        '          <span class="seg"><span class="num" data-cd="h">—</span>'
+        '<span class="u">: Hours</span></span>\n'
+        '          <span class="seg"><span class="num" data-cd="m">—</span>'
+        '<span class="u">: Mins</span></span>\n'
+        '          <span class="seg"><span class="num" data-cd="s">—</span>'
+        '<span class="u">: Secs</span></span>\n'
+        '        </div>\n'
+        '      </div>\n'
+        '\n'
+        '      <div class="matchup-side">\n'
+        '        <span class="crest" style="transform:none;background:var(--black);"></span>\n'
+        '        <div class="place mono">Awaiting bracket</div>\n'
+        '        <div class="team-name">TBD</div>\n'
+        '        <div class="record">—</div>\n'
+        '      </div>\n'
+        '\n'
+        '      <div class="matchup-meta" style="grid-column:1 / -1;">\n'
+        '        <div class="cell">\n'
+        '          <span class="label mono">Date</span>\n'
+        '          <span class="val" data-meta="date">TBD</span>\n'
+        '        </div>\n'
+        '        <div class="cell">\n'
+        '          <span class="label mono">Puck Drop</span>\n'
+        '          <span class="val" data-puckdrop-iso="">'
+        '<em data-meta="puckdrop-time">TBD</em></span>\n'
+        '        </div>\n'
+        '        <div class="cell">\n'
+        '          <span class="label mono">Venue</span>\n'
+        '          <span class="val" data-meta="venue">TBD</span>\n'
+        '        </div>\n'
+        '        <div class="cell">\n'
+        '          <span class="label mono">Broadcast</span>\n'
+        '          <span class="val"><a href="https://www.livebarn.com/" target="_blank" '
+        'rel="noopener noreferrer" style="color:var(--orange);'
+        'border-bottom:1px solid rgba(255,85,0,0.4);padding-bottom:1px;">LiveBarn ↗</a></span>\n'
+        '        </div>\n'
+        '      </div>'
+    )
+
+
+# Playoff-game keywords used to detect non-regular-season games in the API's
+# `game.type` field. The league hasn't published playoff types yet so this is
+# a best-effort match against common naming conventions.
+PLAYOFF_TYPE_KEYWORDS = (
+    "playoff", "semifinal", "semi-final", "semi final",
+    "quarterfinal", "championship", "final",
+)
+
+
+def looks_like_playoff(game_type: str | None) -> bool:
+    if not game_type:
+        return False
+    lower = game_type.lower()
+    return any(kw in lower for kw in PLAYOFF_TYPE_KEYWORDS)
+
+
 def build_matchup_block(
     upcoming: list[dict], standings: list[dict], played: list[dict]
 ) -> str | None:
@@ -655,6 +742,10 @@ def build_matchup_block(
     Filters out past-but-still-in-upcoming-endpoint games — the league leaves
     completed games in the 'upcoming' feed until manually marked, so without
     this filter the matchup card would stay stuck on yesterday's game forever.
+
+    When no future Foxes games exist (between regular-season end and the
+    playoff schedule being published), returns a 'Playoffs ahead — TBD'
+    placeholder instead of leaving the previous game's card stale.
     """
     now_utc = datetime.now(timezone.utc)
     foxes_upcoming = [
@@ -663,7 +754,7 @@ def build_matchup_block(
         and is_future(g, now_utc)
     ]
     if not foxes_upcoming:
-        return None
+        return build_tbd_matchup_block(standings)
     foxes_upcoming.sort(key=lambda g: g.get("scheduleStartTime", ""))
     g = foxes_upcoming[0]
     # Foxes-specific game number: how many games will this be for them?
@@ -698,8 +789,15 @@ def build_matchup_block(
     fox_record = fmt_record(fox_st["w"], fox_st["l"], fox_st["t"])
     opp_record = fmt_record(opp_st["w"], opp_st["l"], opp_st["t"])
 
-    # Foxes-specific game number, two-digit padded
-    game_num = f"{foxes_game_num:02d}"
+    # Game label — use playoff/championship/semifinal naming when the API
+    # game.type signals it, otherwise default to "Regular Season · Game NN".
+    game_type = g.get("type") or ""
+    if looks_like_playoff(game_type):
+        # Capitalize and pass through the league's label (e.g. "Semifinal",
+        # "Championship", "Playoffs").
+        kick_label = game_type.strip().title()
+    else:
+        kick_label = f"Regular Season · Game {foxes_game_num:02d}"
 
     # Countdown values (initial fallback before JS tick)
     now = datetime.now(ET)
@@ -737,7 +835,7 @@ def build_matchup_block(
         '\n'
         '      <div class="matchup-vs">\n'
         '        <div class="vs-big">VS</div>\n'
-        f'        <div class="kick">Regular Season · Game {H(game_num)}</div>\n'
+        f'        <div class="kick">{H(kick_label)}</div>\n'
         '        <div class="count" id="countdown" aria-live="off">\n'
         f'          <span class="seg"><span class="num" data-cd="d">{days:02d}</span>'
         '<span class="u">: Days</span></span>\n'
