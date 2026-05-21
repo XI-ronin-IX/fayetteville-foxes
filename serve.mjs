@@ -29,7 +29,9 @@ const server = http.createServer((req, res) => {
     const reqUrl = decodeURIComponent(req.url.split('?')[0]);
     let rel = reqUrl === '/' ? '/index.html' : reqUrl;
     const filePath = path.join(ROOT, rel);
-    if (!filePath.startsWith(ROOT)) {
+    // Require either an exact match of ROOT or a path under ROOT + path.sep.
+    // Bare `startsWith(ROOT)` would let `C:\foo` match `C:\foobar\secret.txt`.
+    if (filePath !== ROOT && !filePath.startsWith(ROOT + path.sep)) {
       res.writeHead(403); return res.end('Forbidden');
     }
     fs.stat(filePath, (err, stat) => {

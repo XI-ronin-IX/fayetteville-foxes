@@ -936,6 +936,10 @@ def extract_existing_jerseys(html: str) -> dict[str, str]:
     can fall back if the API jersey field is missing or wrong for a player.
     Scoped to those auto regions so team-rank cells in standings ('Fayetteville'
     with rank 2, etc.) don't pollute the mapping.
+
+    Fails loudly if a non-empty region produces zero matches — that means the
+    row layout has drifted and the silent fallback would otherwise lose
+    jersey-number overrides on the next bot run.
     """
     out: dict[str, str] = {}
     pattern = re.compile(
@@ -943,7 +947,17 @@ def extract_existing_jerseys(html: str) -> dict[str, str]:
     )
     for region in ("skaters", "goalies"):
         body = _extract_region_body(html, region)
-        for jr, name in pattern.findall(body):
+        if not body.strip():
+            continue
+        matches = pattern.findall(body)
+        if not matches and "stats-row" in body:
+            raise RuntimeError(
+                f"extract_existing_jerseys: {region!r} region has rows but "
+                f"the jersey/name regex matched 0 of them. Row layout has "
+                f"likely changed; refusing to write to avoid wiping jersey "
+                f"overrides."
+            )
+        for jr, name in matches:
             out[name.strip()] = jr
     return out
 
@@ -1035,13 +1049,19 @@ def build_playoff_results_block(merged: dict) -> str:
 
     Always emits the three canonical fields in stable order for clean diffs;
     other keys in `merged` are dropped.
+
+    The replace("</", "<\\/") step is the standard JSON-in-HTML defense:
+    json.dumps does not escape "/", so a malicious string containing
+    "</script>" would otherwise close the tag prematurely. Encoding the slash
+    as "<\\/script>" is still valid JSON (JSON treats "\\/" as "/") but the
+    HTML parser no longer sees a closing tag.
     """
     canonical = {
         "semi1Winner": merged.get("semi1Winner"),
         "semi2Winner": merged.get("semi2Winner"),
         "champion":    merged.get("champion"),
     }
-    payload = json.dumps(canonical)
+    payload = json.dumps(canonical).replace("</", "<\\/")
     return (
         '    <script type="application/json" id="playoff-results">\n'
         f'{payload}\n'
@@ -1055,16 +1075,29 @@ def extract_existing_svpct(html: str) -> dict[str, str]:
     those ever change column counts in the future.
 
     Goalie row layout: jr, pn, GP, GS, SA, GA, GAA(.pts), SV%, W, L, T
+
+    Fails loudly if the goalies region has rows but the regex returns no
+    matches — without this guard the next bot run would silently wipe the
+    user's manually-maintained SV% values.
     """
     out: dict[str, str] = {}
     body = _extract_region_body(html, "goalies")
+    if not body.strip():
+        return out
     pattern = re.compile(
         r'<span class="jr">\d+</span><span class="pn">([^<]+)</span>'
         r'(?:<span>[^<]*</span>){4}'        # GP, GS, SA, GA
         r'<span class="pts">[^<]*</span>'    # GAA
         r'<span>([.\d]+)</span>'             # SV%
     )
-    for name, svpct in pattern.findall(body):
+    matches = pattern.findall(body)
+    if not matches and "stats-row" in body:
+        raise RuntimeError(
+            "extract_existing_svpct: goalies region has rows but the SV% "
+            "regex matched 0 of them. Row layout has likely changed; "
+            "refusing to write to avoid wiping manual SV% values."
+        )
+    for name, svpct in matches:
         out[name.strip()] = svpct
     return out
 

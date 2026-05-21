@@ -91,4 +91,11 @@ jobs:
           git add index.html
           DATE=$(date -u +'%Y-%m-%d')
           git commit -m "auto: refresh league data on $DATE"
+          # Defensive rebase in case another commit landed on main between
+          # checkout and now (e.g. a manual push, or a workflow_dispatch
+          # racing with the cron run). If the rebase has conflicts, abort
+          # and fail the workflow — the failure email is the right outcome
+          # so we know to look at it.
+          git fetch origin main
+          git rebase origin/main || { echo "::error::Rebase against origin/main conflicted; aborting."; git rebase --abort; exit 1; }
           git push

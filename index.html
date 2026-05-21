@@ -388,6 +388,9 @@
      If you change the gap value, update both numbers (or set them to match). */
   @keyframes scroll{from{transform:translateX(0)}to{transform:translateX(calc(-50% - 28px))}}
   @media(max-width:720px){.ticker-track{animation-duration:28s;}}
+  /* Honor the accessibility preference — vestibular-disorder users get
+     a static ticker instead of a constantly-moving one. */
+  @media(prefers-reduced-motion: reduce){.ticker-track{animation:none;}}
 
   /* ───────── IDENTITY / ESSENCE ───────── */
   .section{padding:84px 0;border-bottom:1px solid var(--line);position:relative;}
@@ -1251,8 +1254,11 @@
         <span>Combined Division</span>
       </div>
       <div class="hero-meta">
-        <div>Next Puck Drop <b data-target="hero-when">WED • MAY 20 • 18:30 ET</b></div>
-        <div data-target="hero-where">vs <b>Raleigh</b> · Invisalign Arena Red Rink</div>
+        <!-- Placeholders. JS sync overwrites these on DOMContentLoaded from
+             the matchup-meta source. Showing "—" instead of a hardcoded last
+             game avoids a flash of stale data on slow connections / JS off. -->
+        <div>Next Puck Drop <b data-target="hero-when">—</b></div>
+        <div data-target="hero-where">—</div>
       </div>
     </div>
 
@@ -2495,7 +2501,17 @@
     const prefix = isHome ? 'vs' : '@';
     const team   = oppNameEl.textContent.trim();
     const venue  = venueEl.textContent.trim();
-    whereTarget.innerHTML = prefix + ' <b>' + team + '</b> · ' + venue;
+    // Build via DOM nodes (not innerHTML) so a hostile team/venue string can't
+    // re-enter as markup. textContent on the source nodes already decoded any
+    // HTML entities back to literal characters; passing them through
+    // innerHTML would resurrect any "<script>" or "<img onerror=…>" payload.
+    const b = document.createElement('b');
+    b.textContent = team;
+    whereTarget.replaceChildren(
+      document.createTextNode(prefix + ' '),
+      b,
+      document.createTextNode(' · ' + venue),
+    );
   })();
 
   // Sync warmup + puck-drop times AND the section title from the matchup-meta
