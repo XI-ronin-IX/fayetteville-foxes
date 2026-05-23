@@ -2222,40 +2222,81 @@
   })();
 
 
-  // Attach opponent logos to each schedule row based on opponent name.
+  // Attach opponent logos to each schedule row.
+  //
+  // Source of truth: the auto-managed standings table. Each row holds a
+  // team-name + {png, webp} mapping, so adding a team to the league
+  // automatically extends this lookup with no hand-maintained map. This
+  // closed a bug where new opponents (e.g. South Apex when playoffs
+  // started) had their schedule rows render without a logo because they
+  // weren't in the old hardcoded oppLogos object.
+  //
+  // Matching: scoped to the opponent label only (the <em> in featured
+  // rows, otherwise the leading text node of .opp). The previous
+  // textContent match included the venue sub-text and could
+  // false-positive on a venue name containing a team substring.
   (function(){
-    const oppLogos = {
-      'Rolesville':    'Rolesville.png',
-      'Pittsboro':     'Pittsboro.png',
-      'Raleigh':       'Raleigh.png',
-      'Chapel Hill':   'Chapel Hill.png',
-      'Durham':        'Durham.png',
-      'Greater Neuse': 'Greater Nuese.png'   // filename ships with typo
-    };
-    document.querySelectorAll('.sched-row .opp').forEach(opp => {
-      const text = opp.textContent;
-      let matched = null;
-      for (const team of Object.keys(oppLogos)) {
-        if (text.includes(team)) { matched = team; break; }
+    const opps = {};
+    document.querySelectorAll(
+      '.stats-table.standings .stats-row:not(.stats-head)'
+    ).forEach(row => {
+      const pn = row.querySelector('.pn');
+      if (!pn) return;
+      // Team display name is the first text node inside .pn (before <picture>).
+      const nameNode = Array.from(pn.childNodes).find(
+        n => n.nodeType === 3 && n.textContent.trim()
+      );
+      const name = nameNode ? nameNode.textContent.trim() : '';
+      if (!name) return;
+      const img = pn.querySelector('img');
+      const source = pn.querySelector('source[type="image/webp"]');
+      opps[name] = {
+        png:  img ? img.getAttribute('src') : '',
+        webp: source ? source.getAttribute('srcset') : '',
+      };
+    });
+
+    // Match longer names first so e.g. "Greater Neuse" (13 chars) wins
+    // before any shorter substring could collide.
+    const orderedNames = Object.keys(opps).sort((a, b) => b.length - a.length);
+
+    function labelText(opp) {
+      const em = opp.querySelector('em');
+      if (em) return em.textContent;
+      let s = '';
+      for (const node of opp.childNodes) {
+        if (node.nodeType === 1 && node.classList && node.classList.contains('sub')) continue;
+        s += node.textContent || '';
       }
+      return s;
+    }
+
+    document.querySelectorAll('.sched-row .opp').forEach(opp => {
+      const text = labelText(opp);
+      const matched = orderedNames.find(team => text.includes(team));
       if (!matched) return;
+      const logo = opps[matched];
+      if (!logo.png) return;
+
       const wrap = document.createElement('span');
       wrap.className = 'opp-text';
       while (opp.firstChild) wrap.appendChild(opp.firstChild);
-      const filename = oppLogos[matched];
-      const webpName = filename.replace(/\.(png|jpe?g)$/i, '.webp');
+
       const pic = document.createElement('picture');
-      const src = document.createElement('source');
-      src.type = 'image/webp';
-      src.srcset = encodeURI(webpName);
-      pic.appendChild(src);
+      if (logo.webp) {
+        const src = document.createElement('source');
+        src.type = 'image/webp';
+        src.setAttribute('srcset', logo.webp);
+        pic.appendChild(src);
+      }
       const img = document.createElement('img');
       img.className = 'opp-logo';
-      img.src = encodeURI(filename);
+      img.src = logo.png;
       img.alt = matched;
       img.loading = 'lazy';
       img.decoding = 'async';
       pic.appendChild(img);
+
       opp.appendChild(pic);
       opp.appendChild(wrap);
     });
