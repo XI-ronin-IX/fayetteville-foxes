@@ -27,6 +27,7 @@ import html
 import json
 import os
 import re
+import shutil
 import sys
 import unicodedata
 import urllib.error
@@ -35,6 +36,13 @@ from datetime import date, datetime, timezone, timedelta
 from pathlib import Path
 from typing import Any, Iterable
 from zoneinfo import ZoneInfo
+
+# Import the season-config module as a top-level name. update_data.py is run as
+# `python scripts/update_data.py` (its own dir is already on sys.path) and also
+# imported by the test suite (which inserts the same dir) — so this resolves
+# consistently to a single module identity either way.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import season_config as _season_config  # noqa: E402
 
 
 def H(s: Any) -> str:
@@ -48,18 +56,43 @@ def H(s: Any) -> str:
 # Configuration
 # ─────────────────────────────────────────────────────────────────────────────
 
-SEASON_ID = "14572"
-FAYETTEVILLE_TEAM_ID = "498107"
-FAYETTEVILLE_TEAM_NAME = "Team Fayetteville"
-
 API_BASE = "https://gamesheetstats.com/api"
-ENDPOINTS = {
-    "standings": f"{API_BASE}/useStandings/getDivisionStandings/{SEASON_ID}",
-    "scores": f"{API_BASE}/useScoredGames/getSeasonScores/{SEASON_ID}",
-    "schedule": f"{API_BASE}/useSchedule/getSeasonSchedule/{SEASON_ID}",
-    "skaters": f"{API_BASE}/usePlayers/getPlayerStandings/{SEASON_ID}",
-    "goalies": f"{API_BASE}/useGoalies/getGoalieStandings/{SEASON_ID}",
-}
+
+# Season identity is initialized from season_config.json at runtime via
+# _init_season(); these module globals are the live values the fetchers read.
+SEASON_ID = _season_config.DEFAULTS["season_id"]
+FAYETTEVILLE_TEAM_ID = _season_config.DEFAULTS["team_id"]
+FAYETTEVILLE_TEAM_NAME = _season_config.DEFAULTS["team_name"]
+SEASON_YEAR = _season_config.DEFAULTS["year"]
+ENDPOINTS: dict[str, str] = {}
+
+
+def _build_endpoints(season_id: str) -> dict[str, str]:
+    return {
+        "standings": f"{API_BASE}/useStandings/getDivisionStandings/{season_id}",
+        "scores":    f"{API_BASE}/useScoredGames/getSeasonScores/{season_id}",
+        "schedule":  f"{API_BASE}/useSchedule/getSeasonSchedule/{season_id}",
+        "skaters":   f"{API_BASE}/usePlayers/getPlayerStandings/{season_id}",
+        "goalies":   f"{API_BASE}/useGoalies/getGoalieStandings/{season_id}",
+    }
+
+
+def _init_season(cfg: dict | None = None) -> dict:
+    """Load the current-season identity into the module globals the fetchers
+    use. Returns the full config dict (with archives)."""
+    global SEASON_ID, FAYETTEVILLE_TEAM_ID, FAYETTEVILLE_TEAM_NAME, SEASON_YEAR, ENDPOINTS
+    cfg = cfg or _season_config.load_config()
+    cur = cfg["current"]
+    SEASON_ID = str(cur["season_id"])
+    FAYETTEVILLE_TEAM_ID = str(cur.get("team_id", ""))
+    FAYETTEVILLE_TEAM_NAME = cur.get("team_name", _season_config.DEFAULTS["team_name"])
+    SEASON_YEAR = int(cur["year"])
+    ENDPOINTS = _build_endpoints(SEASON_ID)
+    return cfg
+
+
+# Initialize at import so module-level/early callers have a valid season.
+_init_season()
 
 ET = ZoneInfo("America/New_York")
 USER_AGENT = "FayettevilleFoxes-Updater/1.0 (+https://github.com/XI-ronin-IX/fayetteville-foxes)"
