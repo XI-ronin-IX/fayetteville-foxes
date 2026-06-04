@@ -1366,55 +1366,15 @@ def did_foxes_play_today(played: list[dict]) -> bool:
     return False
 
 
-def main(argv: list[str] | None = None) -> int:
-    # Force UTF-8 stdout on Windows so we can print arrows, em-dashes, etc.
-    if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
-        try:
-            sys.stdout.reconfigure(encoding="utf-8")
-        except Exception:
-            pass
-    # (Re)load the current-season identity into the module globals.
-    cfg = _init_season()
-    p = argparse.ArgumentParser(description="Update auto-managed sections of index.html")
-    p.add_argument("--first-run", action="store_true",
-                   help="(Deprecated) No-op flag, kept for backwards compat. "
-                        "Manual goalie save percentage is now always preserved.")
-    p.add_argument("--dry-run", action="store_true",
-                   help="Print diff but don't write")
-    p.add_argument("--check-played", action="store_true",
-                   help="Probe-only mode for the cron gate. Exit codes: "
-                        "0 = a Foxes game was played today (proceed with full update); "
-                        "1 = no Foxes game today (skip full update); "
-                        "2 = API error or other failure (treat as workflow failure)")
-    p.add_argument("--index", default="index.html",
-                   help="Path to index.html (default: ./index.html)")
-    args = p.parse_args(argv)
-
-    repo_root = Path(__file__).resolve().parent.parent
-    index_path = (repo_root / args.index).resolve()
-    if not index_path.exists():
-        print(f"index.html not found at {index_path}", file=sys.stderr)
-        return 2
-
-    # --check-played mode: isolate API failures so the cron gate can distinguish
-    # "no game today" (rc=1, silent skip) from "API broke" (rc=2, workflow fails
-    # and emails us).
-    if args.check_played:
-        try:
-            print(f"[fetch] played-games (probe)", flush=True)
-            played = fetch_played_games()
-            played_today = did_foxes_play_today(played)
-        except Exception as e:
-            print(f"[error] check-played failed: {e!r}", file=sys.stderr)
-            return 2
-        print(f"foxes-played-today: {played_today}")
-        return 0 if played_today else 1
-
+def regenerate_index(html_old: str, cfg: dict) -> str:
+    """Rebuild every auto-region in `html_old` from the current API + cfg and
+    return the new HTML. Shared by the normal update and the rollover scaffold.
+    Relies on the module-level season globals already being initialized for the
+    season in `cfg` (see _init_season)."""
     print(f"[fetch] standings", flush=True)
     standings = fetch_standings()
     print(f"[fetch] played-games", flush=True)
     played = fetch_played_games()
-
     print(f"[fetch] upcoming-schedule", flush=True)
     upcoming = fetch_upcoming_games()
     print(f"[fetch] skaters", flush=True)
@@ -1428,13 +1388,11 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  skaters:   {len(skaters)} Fayetteville players")
     print(f"  goalies:   {len(goalies)} Fayetteville goalies")
 
-    html_old = index_path.read_text(encoding="utf-8")
     existing_jerseys = extract_existing_jerseys(html_old)
     # Always preserve manual goalie SV% — the league portal returns 0.000 (their
-    # SA/GA accounting differs from ours), so the API value is not reliable.
-    # The user maintains SV% by hand in index.html; the script touches everything
-    # else but leaves SV% alone. The --first-run flag is now a no-op for SV%
-    # and is kept only for any future "preserve more on first run" needs.
+    # SA/GA accounting differs from ours), so the API value is not reliable. The
+    # user maintains SV% by hand in index.html; the script touches everything
+    # else but leaves SV% alone.
     svp_overrides = extract_existing_svpct(html_old)
     if svp_overrides:
         print(f"  preserving manual SV% for {list(svp_overrides)}")
@@ -1484,6 +1442,108 @@ def main(argv: list[str] | None = None) -> int:
     if matchup_block:
         html_new = replace_region(html_new, "matchup", matchup_block)
     html_new = replace_region(html_new, "playoff-results", playoff_results_block)
+    return html_new
+
+
+def run_rollover(new_year: int, season_id: str, team_id: str | None,
+                 team_name: str | None, index_path: Path,
+                 config_path: Path = _season_config.CONFIG_PATH,
+                 force: bool = False) -> int:
+    """Archive the current season and scaffold a fresh one. Returns a process
+    exit code (0 ok, 2 on guard failure)."""
+    cfg = _season_config.load_config(config_path)
+    old_year = cfg["current"]["year"]
+    archive_path = index_path.parent / f"{old_year}.html"
+
+    if archive_path.exists() and not force:
+        print(f"[error] archive {archive_path.name} already exists; use --force to overwrite",
+              file=sys.stderr)
+        return 2
+    try:
+        new_cfg = _season_config.rollover(cfg, new_year, season_id, team_id, team_name)
+    except ValueError as e:
+        print(f"[error] {e}", file=sys.stderr)
+        return 2
+
+    # 1. Freeze the current page as the archive (byte-for-byte).
+    shutil.copyfile(index_path, archive_path)
+    print(f"[archive] {index_path.name} -> {archive_path.name}")
+
+    # 2. Persist the new config and load it into the live globals.
+    _season_config.save_config(new_cfg, config_path)
+    _init_season(new_cfg)
+    print(f"[config] current season is now {new_year} (season_id={season_id})")
+
+    # 3. Regenerate index.html against the new (mostly empty) season.
+    html_old = index_path.read_text(encoding="utf-8")
+    html_new = regenerate_index(html_old, new_cfg)
+    index_path.write_text(html_new, encoding="utf-8")
+    print(f"[scaffold] wrote preseason {new_year} shell to {index_path.name}")
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    # Force UTF-8 stdout on Windows so we can print arrows, em-dashes, etc.
+    if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
+        try:
+            sys.stdout.reconfigure(encoding="utf-8")
+        except Exception:
+            pass
+    # (Re)load the current-season identity into the module globals.
+    cfg = _init_season()
+    p = argparse.ArgumentParser(description="Update auto-managed sections of index.html")
+    p.add_argument("--first-run", action="store_true",
+                   help="(Deprecated) No-op flag, kept for backwards compat. "
+                        "Manual goalie save percentage is now always preserved.")
+    p.add_argument("--dry-run", action="store_true",
+                   help="Print diff but don't write")
+    p.add_argument("--check-played", action="store_true",
+                   help="Probe-only mode for the cron gate. Exit codes: "
+                        "0 = a Foxes game was played today (proceed with full update); "
+                        "1 = no Foxes game today (skip full update); "
+                        "2 = API error or other failure (treat as workflow failure)")
+    p.add_argument("--index", default="index.html",
+                   help="Path to index.html (default: ./index.html)")
+    p.add_argument("--start-season", type=int, metavar="YEAR",
+                   help="Roll over to a new season: archive the current one and "
+                        "scaffold a fresh YEAR shell. Requires --season-id.")
+    p.add_argument("--season-id", help="gamesheet season ID for the new season")
+    p.add_argument("--team-id", help="(optional) team ID for the new season")
+    p.add_argument("--team-name", help="(optional) team name; defaults to current")
+    p.add_argument("--force", action="store_true",
+                   help="Overwrite an existing <year>.html archive")
+    args = p.parse_args(argv)
+
+    repo_root = Path(__file__).resolve().parent.parent
+    index_path = (repo_root / args.index).resolve()
+    if not index_path.exists():
+        print(f"index.html not found at {index_path}", file=sys.stderr)
+        return 2
+
+    # Rollover mode: archive the current season and scaffold the next one.
+    if args.start_season:
+        return run_rollover(
+            new_year=args.start_season, season_id=args.season_id or "",
+            team_id=args.team_id, team_name=args.team_name,
+            index_path=index_path, force=args.force,
+        )
+
+    # --check-played mode: isolate API failures so the cron gate can distinguish
+    # "no game today" (rc=1, silent skip) from "API broke" (rc=2, workflow fails
+    # and emails us).
+    if args.check_played:
+        try:
+            print(f"[fetch] played-games (probe)", flush=True)
+            played = fetch_played_games()
+            played_today = did_foxes_play_today(played)
+        except Exception as e:
+            print(f"[error] check-played failed: {e!r}", file=sys.stderr)
+            return 2
+        print(f"foxes-played-today: {played_today}")
+        return 0 if played_today else 1
+
+    html_old = index_path.read_text(encoding="utf-8")
+    html_new = regenerate_index(html_old, cfg)
 
     if html_new == html_old:
         print("[result] no changes — exiting without writing")

@@ -10,10 +10,12 @@ is a single module identity regardless of how the suite is invoked.
 """
 from __future__ import annotations
 import json
+import shutil
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -114,6 +116,54 @@ class TestSeasonsNav(unittest.TestCase):
                "archives": []}
         out = ud.build_seasons_nav_block(cfg)
         self.assertIn('href="/"', out)
+
+
+class TestRollover(unittest.TestCase):
+    def test_rollover_archives_and_scaffolds(self):
+        self.addCleanup(ud._init_season)  # restore real-config globals after
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            index = d / "index.html"
+            # replace_region requires each marker on its own line (newline after
+            # BEGIN, newline before END) — mirror the real index.html layout.
+            def region(name, inner="old"):
+                return f"<!-- BEGIN auto:{name} -->\n{inner}\n<!-- END auto:{name} -->\n"
+            index.write_text(
+                region("season-meta", '{"year": 2026}')
+                + '<div class="matchup">\n' + region("matchup") + '</div>\n'
+                + region("standings")
+                + region("skaters")
+                + region("goalies")
+                + region("schedule-list")
+                + region("ticker")
+                + region("playoff-results")
+                + region("seasons-nav")
+                + region("seasons-nav-mobile"),
+                encoding="utf-8")
+            config = d / "season_config.json"
+            shutil.copy(Path(__file__).resolve().parent / "season_config.json", config)
+
+            with mock.patch.multiple(
+                ud,
+                fetch_standings=lambda: [],
+                fetch_played_games=lambda *a, **k: [],
+                fetch_upcoming_games=lambda *a, **k: [],
+                fetch_skater_stats=lambda: [],
+                fetch_goalie_stats=lambda: [],
+            ):
+                rc = ud.run_rollover(
+                    new_year=2027, season_id="20000", team_id=None, team_name=None,
+                    index_path=index, config_path=config, force=False,
+                )
+
+            self.assertEqual(rc, 0)
+            self.assertTrue((d / "2026.html").exists(), "archive not created")
+            cfg = json.loads(config.read_text(encoding="utf-8"))
+            self.assertEqual(cfg["current"]["year"], 2027)
+            self.assertIn({"year": 2026}, cfg["archives"])
+            new_html = index.read_text(encoding="utf-8")
+            self.assertIn('"year": 2027', new_html)
+            self.assertIn("Preseason", new_html)
 
 
 if __name__ == "__main__":
