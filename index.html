@@ -140,7 +140,7 @@
   }
   .nav-seasons-btn:hover,.nav-seasons-btn:focus-visible{color:var(--bone);}
   .nav-seasons-menu{
-    position:absolute;right:0;top:calc(100% + 10px);min-width:180px;
+    position:absolute;left:0;top:calc(100% + 10px);min-width:180px;
     background:var(--ink);border:1px solid var(--line-strong);
     display:none;flex-direction:column;z-index:60;
     box-shadow:0 18px 40px -12px rgba(0,0,0,0.6);
@@ -1150,20 +1150,18 @@
     position:relative;
     background:linear-gradient(90deg, rgba(255,85,0,0.18), rgba(255,85,0,0.04) 70%, transparent);
     border-left:3px solid var(--orange);
-    /* Reserve room on the right so the score doesn't collide with the
-       absolutely-positioned CHAMPION badge. */
-    padding-right:124px;
   }
   .bracket-team.champion .name{color:var(--orange);font-weight:900;}
+  /* Score stays rightmost; the CHAMPION badge sits just to its LEFT. */
   .bracket-team.champion::after{
     content:"CHAMPION";
-    position:absolute;right:14px;top:50%;transform:translateY(-50%);
+    position:absolute;right:44px;top:50%;transform:translateY(-50%);
     font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.22em;
     color:var(--orange);padding:3px 7px;
     border:1px solid var(--orange);
     pointer-events:none;
   }
-  @media(max-width:540px){.bracket-team.champion::after{display:none;}.bracket-team.champion{padding-right:18px;}}
+  @media(max-width:540px){.bracket-team.champion::after{display:none;}}
 
   /* ───────── FADE-IN ───────── */
   @media (prefers-reduced-motion: no-preference){
@@ -1260,12 +1258,6 @@
       <span class="name">Fayetteville <em>Foxes</em></span>
     </a>
     <nav class="nav-links">
-      <a href="#team" class="active">Team</a>
-      <a href="#schedule">Schedule</a>
-      <a href="#playoffs">Playoffs</a>
-      <a href="#roster">Roster</a>
-      <a href="#stats">Stats</a>
-      <a href="#gameday">Gameday</a>
       <div class="nav-seasons">
         <button type="button" class="nav-seasons-btn" aria-haspopup="true" aria-expanded="false">Seasons ▾</button>
         <div class="nav-seasons-menu" role="menu">
@@ -1274,6 +1266,12 @@
           <!-- END auto:seasons-nav -->
         </div>
       </div>
+      <a href="#team" class="active">Team</a>
+      <a href="#schedule">Schedule</a>
+      <a href="#playoffs">Playoffs</a>
+      <a href="#roster">Roster</a>
+      <a href="#stats">Stats</a>
+      <a href="#gameday">Gameday</a>
     </nav>
     <div class="nav-actions">
       <button type="button" class="nav-hamburger" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobile-menu">
@@ -1628,10 +1626,13 @@
         <div class="section-label">03 / The Squad</div>
         <h2 class="section-title display">Names on <em>the back.</em></h2>
       </div>
+      <!-- BEGIN auto:roster-lede -->
       <p class="section-lede">Twenty skaters, two tenders, one bench. The group that's <b><span data-foxes-record="dash">3-2-1</span> through <span data-foxes-gp-word>six</span></b> and still climbing.</p>
+      <!-- END auto:roster-lede -->
     </div>
 
     <div class="roster-grid">
+      <!-- BEGIN auto:roster-cards -->
       <div class="player captain">
         <div class="tag mono">Captain · C</div>
         <div class="mono">#02 · Skater</div>
@@ -1773,6 +1774,7 @@
         <div class="name">Colton Lilge</div>
         <div class="role">Goalie · Born 2011</div>
       </div>
+      <!-- END auto:roster-cards -->
     </div>
 
     <div id="coaches" class="coaches-head">
@@ -1783,6 +1785,7 @@
       <p>The trio running the bench, the whiteboard, and the between-period adjustments.</p>
     </div>
     <div class="coach-grid">
+      <!-- BEGIN auto:coaches-cards -->
       <div class="coach head">
         <div class="tag">Head Coach</div>
         <div class="coach-name">Jamie <em>Blackwood</em></div>
@@ -1800,6 +1803,7 @@
         <a class="ep-link" href="https://www.eliteprospects.com/player/580541/austin-finch" target="_blank" rel="noopener noreferrer" aria-label="Austin Finch on Elite Prospects">Elite Prospects</a>
         <div class="eyebrow">Bench Staff</div>
       </div>
+      <!-- END auto:coaches-cards -->
     </div>
   </div>
 </section>
@@ -2154,6 +2158,8 @@
   );
 
   document.querySelectorAll('.player').forEach(card => {
+    // Preseason placeholder cards (no real player) — no headshot, stats, or EP link.
+    if (card.classList.contains('tba')) return;
     const nameEl = card.querySelector('.name');
     const roleEl = card.querySelector('.role');
     if (!nameEl || !roleEl) return;
@@ -2748,7 +2754,21 @@
   //   - Roster section lede ("3-2-1 through six")
   (function(){
     const usRow = document.querySelector('.stats-row.us');
-    if (!usRow) return;
+    if (!usRow) {
+      // No standings row yet (preseason / empty season). Show a zeroed
+      // placeholder instead of the static sample values baked into the HTML.
+      document.querySelectorAll('[data-foxes-record="hero"]').forEach(el => {
+        el.innerHTML = '0<span class="sub">W</span> 0<span class="sub">L</span> 0<span class="sub">T</span>';
+      });
+      document.querySelectorAll('[data-foxes-record="dotted"]').forEach(el => { el.textContent = '0W · 0L · 0T'; });
+      document.querySelectorAll('[data-foxes-record="dash"]').forEach(el => { el.textContent = '0-0-0'; });
+      document.querySelectorAll('[data-foxes-gp-word]').forEach(el => { el.textContent = 'zero'; });
+      document.querySelectorAll('[data-foxes-gp]').forEach(el => { el.textContent = '0'; });
+      document.querySelectorAll('[data-foxes-rank]').forEach(el => {
+        el.innerHTML = '#<span class="sub">/ 8</span>';
+      });
+      return;
+    }
     // Standings row layout: rank, team, GP, W, L, T, PTS, GF, GA, DIFF, STK
     const cells = usRow.children;
     const rank = parseInt(cells[0] && cells[0].textContent, 10);

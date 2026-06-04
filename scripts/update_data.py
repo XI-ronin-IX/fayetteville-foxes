@@ -827,6 +827,56 @@ def build_preseason_matchup_block(year: int) -> str:
     )
 
 
+# How many placeholder skater cards to scaffold for a brand-new season's
+# roster (the real count is unknown until the team is set).
+ROSTER_PLACEHOLDER_COUNT = 12
+
+
+def build_preseason_roster_lede(year: int) -> str:
+    """Roster section lede for a not-yet-announced season. Drops the live
+    record hooks (no games played) in favor of a neutral 'coming soon' line."""
+    return (
+        '      <p class="section-lede">The '
+        f'{year} roster hasn’t been announced yet — returning players and new '
+        'faces are still to be confirmed. Names and numbers will fill in here '
+        'before the season starts.</p>'
+    )
+
+
+def build_preseason_roster_cards(year: int) -> str:
+    """Generic 'TBA' player cards for a new season whose roster is unknown.
+    No `.tag` (so none render as standout) and a name that has no photo slug,
+    so the headshot loader simply finds nothing and the card stays clean."""
+    card = (
+        '      <div class="player tba">\n'
+        f'        <div class="mono">Roster · {year}</div>\n'
+        '        <div class="num">—</div>\n'
+        '        <div class="name">TBA</div>\n'
+        '        <div class="role">To be announced</div>\n'
+        '      </div>'
+    )
+    return "\n".join(card for _ in range(ROSTER_PLACEHOLDER_COUNT))
+
+
+def build_preseason_coaches_cards() -> str:
+    """Generic 'TBA' coaching-staff cards for a new season."""
+    head = (
+        '      <div class="coach head">\n'
+        '        <div class="tag">Head Coach</div>\n'
+        '        <div class="coach-name">TBA</div>\n'
+        '        <div class="eyebrow">To be announced</div>\n'
+        '      </div>'
+    )
+    asst = (
+        '      <div class="coach">\n'
+        '        <div class="tag">Assistant Coach</div>\n'
+        '        <div class="coach-name">TBA</div>\n'
+        '        <div class="eyebrow">To be announced</div>\n'
+        '      </div>'
+    )
+    return "\n".join([head, asst, asst])
+
+
 def _season_year(played: list[dict]) -> int:
     """Best-effort season year — the latest 4-digit year seen in played-game
     date strings ("May 29, 2026"), falling back to the current ET year."""
@@ -1454,6 +1504,18 @@ def regenerate_index(html_old: str, cfg: dict, fresh: bool = False) -> str:
     if matchup_block:
         html_new = replace_region(html_new, "matchup", matchup_block)
     html_new = replace_region(html_new, "playoff-results", playoff_results_block)
+
+    # Roster + coaches are hand-maintained per season, so the nightly update
+    # leaves them alone. Only a fresh-season scaffold resets them to "TBA"
+    # placeholders (otherwise last season's players would carry into the new
+    # one). The user fills in the real roster once the team is known.
+    if fresh:
+        html_new = replace_region(html_new, "roster-lede",
+                                  build_preseason_roster_lede(SEASON_YEAR))
+        html_new = replace_region(html_new, "roster-cards",
+                                  build_preseason_roster_cards(SEASON_YEAR))
+        html_new = replace_region(html_new, "coaches-cards",
+                                  build_preseason_coaches_cards())
     return html_new
 
 

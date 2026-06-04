@@ -143,7 +143,11 @@ class TestRollover(unittest.TestCase):
                          '{"semi1Winner": "Durham", "semi2Winner": "South Apex", '
                          '"champion": "South Apex"}')
                 + region("seasons-nav")
-                + region("seasons-nav-mobile"),
+                + region("seasons-nav-mobile")
+                # Seed last season's roster + coaches to prove they reset.
+                + region("roster-lede", '<p>3-2-1 through six</p>')
+                + region("roster-cards", '<div class="player"><div class="name">John Bishop</div></div>')
+                + region("coaches-cards", '<div class="coach"><div class="coach-name">Jamie Blackwood</div></div>'),
                 encoding="utf-8")
             config = d / "season_config.json"
             shutil.copy(Path(__file__).resolve().parent / "season_config.json", config)
@@ -172,6 +176,10 @@ class TestRollover(unittest.TestCase):
             # Last season's champion must NOT bleed into the fresh season.
             self.assertNotIn("South Apex", new_html)
             self.assertIn('"champion": null', new_html)
+            # Last season's roster + coaches reset to placeholders.
+            self.assertNotIn("John Bishop", new_html)
+            self.assertNotIn("Blackwood", new_html)
+            self.assertIn("To be announced", new_html)
 
 
 if __name__ == "__main__":
