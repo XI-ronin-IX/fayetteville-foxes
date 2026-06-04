@@ -775,7 +775,7 @@ def build_season_complete_matchup_block(
         '      <div class="matchup-vs">\n'
         f'        <div class="vs-big">{year_short}</div>\n'
         '        <div class="kick">Season Complete</div>\n'
-        '        <div class="season-note mono">That’s a wrap.<br>See you next fall.</div>\n'
+        '        <div class="season-note mono">That’s a wrap.<br>See you next year.</div>\n'
         '      </div>\n'
         '\n'
         '      <div class="matchup-side champ">\n'
@@ -1091,14 +1091,17 @@ def detect_playoff_results(
     anything else (only top-4 pairing matters, so this is championship in
     practice) goes to the champion slot.
 
-    Returns a dict with semi1Winner / semi2Winner / champion fields, each
-    either a display name string or None if no decided game was found.
+    Returns a dict with semi1Winner / semi2Winner / champion fields (each a
+    display name or None) plus a `scores` dict mapping each decided slot
+    ("semi1" / "semi2" / "championship") to {teamDisplayName: goals} for both
+    participants. Slots with no decided game are absent from `scores`.
     """
     rank_by_team_full = {t["team"]: t["rank"] for t in standings}
-    out: dict[str, str | None] = {
+    out: dict = {
         "semi1Winner": None,
         "semi2Winner": None,
         "champion":    None,
+        "scores":      {},
     }
 
     # Sort played games chronologically so later games (championship) win
@@ -1131,12 +1134,17 @@ def detect_playoff_results(
             continue
         pair = tuple(sorted([home_rank, visitor_rank]))
         if pair == (1, 4):
-            out["semi1Winner"] = winner_disp
+            slot, winner_key = "semi1", "semi1Winner"
         elif pair == (2, 3):
-            out["semi2Winner"] = winner_disp
+            slot, winner_key = "semi2", "semi2Winner"
         else:
             # Any other pairing of playoff teams is the championship.
-            out["champion"] = winner_disp
+            slot, winner_key = "championship", "champion"
+        out[winner_key] = winner_disp
+        out["scores"][slot] = {
+            TEAM_DISPLAY.get(home_name, home_name): home_goals,
+            TEAM_DISPLAY.get(visitor_name, visitor_name): visitor_goals,
+        }
 
     return out
 
@@ -1144,8 +1152,9 @@ def detect_playoff_results(
 def build_playoff_results_block(merged: dict) -> str:
     """Generate the <script type="application/json"> block for the auto-region.
 
-    Always emits the three canonical fields in stable order for clean diffs;
-    other keys in `merged` are dropped.
+    Always emits the canonical fields in stable order for clean diffs;
+    other keys in `merged` are dropped. `scores` (per-slot game scores) is
+    only emitted when non-empty so the common no-playoffs-yet diff stays tiny.
 
     The replace("</", "<\\/") step is the standard JSON-in-HTML defense:
     json.dumps does not escape "/", so a malicious string containing
@@ -1158,6 +1167,9 @@ def build_playoff_results_block(merged: dict) -> str:
         "semi2Winner": merged.get("semi2Winner"),
         "champion":    merged.get("champion"),
     }
+    scores = merged.get("scores") or {}
+    if scores:
+        canonical["scores"] = scores
     payload = json.dumps(canonical).replace("</", "<\\/")
     return (
         '    <script type="application/json" id="playoff-results">\n'
@@ -1295,7 +1307,13 @@ def main(argv: list[str] | None = None) -> int:
               else existing_playoffs.get(key))
         for key in ("semi1Winner", "semi2Winner", "champion")
     }
-    detected_now = [k for k, v in auto_playoffs.items() if v is not None]
+    # Merge per-slot scores: auto-detected wins for a slot, else keep existing
+    # (so a manually-entered score survives until the API exposes that game).
+    merged_scores = dict(existing_playoffs.get("scores") or {})
+    merged_scores.update(auto_playoffs.get("scores") or {})
+    merged_playoffs["scores"] = merged_scores
+    detected_now = [k for k, v in auto_playoffs.items()
+                    if k != "scores" and v is not None]
     if detected_now:
         print(f"  detected playoff winners from API: {detected_now}")
 

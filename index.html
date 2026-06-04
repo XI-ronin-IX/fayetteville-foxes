@@ -1077,11 +1077,16 @@
   }
   .bracket-team{
     display:grid;
-    grid-template-columns:36px 44px 1fr;
+    grid-template-columns:36px 44px 1fr auto;
     align-items:center;
     gap:14px;
     padding:14px 18px;
     border-bottom:1px solid var(--line);
+  }
+  .bracket-team .score{
+    font-family:'Saira Condensed',sans-serif;font-weight:900;font-style:italic;
+    font-size:24px;line-height:1;color:var(--bone);letter-spacing:-0.01em;
+    justify-self:end;font-variant-numeric:tabular-nums;
   }
   .bracket-team:last-child{border-bottom:none;}
   .bracket-team .seed{
@@ -1119,6 +1124,9 @@
     position:relative;
     background:linear-gradient(90deg, rgba(255,85,0,0.18), rgba(255,85,0,0.04) 70%, transparent);
     border-left:3px solid var(--orange);
+    /* Reserve room on the right so the score doesn't collide with the
+       absolutely-positioned CHAMPION badge. */
+    padding-right:124px;
   }
   .bracket-team.champion .name{color:var(--orange);font-weight:900;}
   .bracket-team.champion::after{
@@ -1129,7 +1137,7 @@
     border:1px solid var(--orange);
     pointer-events:none;
   }
-  @media(max-width:540px){.bracket-team.champion::after{display:none;}}
+  @media(max-width:540px){.bracket-team.champion::after{display:none;}.bracket-team.champion{padding-right:18px;}}
 
   /* ───────── FADE-IN ───────── */
   @media (prefers-reduced-motion: no-preference){
@@ -1414,7 +1422,7 @@
       <div class="matchup-vs">
         <div class="vs-big">’26</div>
         <div class="kick">Season Complete</div>
-        <div class="season-note mono">That’s a wrap.<br>See you next fall.</div>
+        <div class="season-note mono">That’s a wrap.<br>See you next year.</div>
       </div>
 
       <div class="matchup-side champ">
@@ -1562,7 +1570,7 @@
     </div>
     <!-- BEGIN auto:playoff-results -->
     <script type="application/json" id="playoff-results">
-{"semi1Winner": "Durham", "semi2Winner": "South Apex", "champion": "South Apex"}
+{"semi1Winner": "Durham", "semi2Winner": "South Apex", "champion": "South Apex", "scores": {"championship": {"Durham": 1, "South Apex": 4}, "semi2": {"South Apex": 3, "Fayetteville": 0}, "semi1": {"Durham": 6, "Chapel Hill": 2}}}
     </script>
     <!-- END auto:playoff-results -->
   </div>
@@ -2532,7 +2540,7 @@
     // Top-of-page banner: "Next Puck Drop —" → "<yr> Season · Complete".
     set('[data-target="hero-when-label"]', (yr ? yr + ' ' : '') + 'Season');
     set('[data-target="hero-when"]', 'Complete');
-    set('[data-target="hero-where"]', 'See you next fall');
+    set('[data-target="hero-where"]', 'See you next year');
     // Section 02 heading + lede.
     set('[data-target="section-02-label"]', '02 / The Final Whistle');
     set('[data-target="next-game-phrase"]', 'That’s a wrap on ' + (yr || 'the season'));
@@ -2730,6 +2738,25 @@
       catch (_) { /* keep defaults if JSON is bad */ }
     }
 
+    // Per-slot final scores, e.g. {semi1:{Durham:6,"Chapel Hill":2}, ...}.
+    const SCORES = (PLAYOFF_RESULTS && PLAYOFF_RESULTS.scores) || {};
+    // data-seed → which semifinal slot key the score lives under.
+    const SEED_TO_SLOT = { 1: 'semi1', 4: 'semi1', 2: 'semi2', 3: 'semi2' };
+    // Case-insensitive lookup of a team's goals within a slot's score map.
+    function scoreFor(slotMap, name) {
+      if (!slotMap || !name) return null;
+      if (Object.prototype.hasOwnProperty.call(slotMap, name)) return slotMap[name];
+      const k = Object.keys(slotMap).find(key => key.toLowerCase() === name.toLowerCase());
+      return k != null ? slotMap[k] : null;
+    }
+    // Render (or clear) the score cell appended to a .bracket-team row.
+    function setScore(slot, val) {
+      let s = slot.querySelector('.score');
+      if (val == null || val === '') { if (s) s.remove(); return; }
+      if (!s) { s = document.createElement('span'); s.className = 'score'; slot.appendChild(s); }
+      s.textContent = String(val);
+    }
+
     const standingsTable = document.querySelector('.stats-table.standings');
     const bracket = document.querySelector('.bracket');
     if (!standingsTable || !bracket) return;
@@ -2790,7 +2817,9 @@
     teams.slice(0, 4).forEach(t => { bySeed[t.rank] = t; });
     bracket.querySelectorAll('.bracket-team[data-seed]').forEach(slot => {
       const seed = parseInt(slot.dataset.seed, 10);
-      fillSlot(slot, bySeed[seed], seed);
+      const team = bySeed[seed];
+      fillSlot(slot, team, seed);
+      if (team) setScore(slot, scoreFor(SCORES[SEED_TO_SLOT[seed]], team.name));
     });
 
     // Apply PLAYOFF_RESULTS: dim losers, populate championship, mark champion.
@@ -2816,6 +2845,11 @@
 
     const w1 = applySemiResult(semiMatches[0], finalSlots[0], PLAYOFF_RESULTS.semi1Winner);
     const w2 = applySemiResult(semiMatches[1], finalSlots[1], PLAYOFF_RESULTS.semi2Winner);
+
+    // Championship game scores for whichever finalists are now populated.
+    [w1, w2].forEach((w, i) => {
+      if (w) setScore(finalSlots[i], scoreFor(SCORES.championship, w.name));
+    });
 
     // Championship: dim the loser, mark the winner as champion.
     if (PLAYOFF_RESULTS.champion && (w1 || w2)) {
