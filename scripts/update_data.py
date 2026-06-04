@@ -718,6 +718,96 @@ def build_tbd_matchup_block(standings: list[dict]) -> str:
     )
 
 
+def _season_year(played: list[dict]) -> int:
+    """Best-effort season year — the latest 4-digit year seen in played-game
+    date strings ("May 29, 2026"), falling back to the current ET year."""
+    years: list[int] = []
+    for g in played:
+        d = g.get("game", {}).get("date") or ""
+        m = re.search(r"\b(\d{4})\b", d)
+        if m:
+            years.append(int(m.group(1)))
+    return max(years) if years else datetime.now(ET).year
+
+
+def build_season_complete_matchup_block(
+    standings: list[dict], champion: str, year: int
+) -> str:
+    """Season-over matchup card. Shown once the championship is decided and no
+    future Foxes games remain — replaces the 'next game' card with a season
+    wrap-up (final record + standing) and a nod to the league champion.
+
+    The `data-season-state="complete"` marker on the home side is the sentinel
+    the page JS keys on to swap the 'Next Puck Drop' banner/title into a
+    season-complete holding state instead of the playoffs-pending one.
+    """
+    by_team = {t["team"]: t for t in standings}
+    fox_st = by_team.get(FAYETTEVILLE_TEAM_NAME, {"w": 0, "l": 0, "t": 0, "rank": "?"})
+    fox_record = fmt_record(fox_st["w"], fox_st["l"], fox_st["t"])
+    standing = f"#{fox_st['rank']} of {len(standings)}" if standings else "—"
+    year_short = f"’{str(year)[-2:]}"  # ’26
+
+    champ_full = "Team " + champion
+    champ_logo = TEAM_LOGOS.get(champ_full)
+    if champ_logo:
+        # Logo path comes from our internal TEAM_LOGOS map — trusted, no escape needed.
+        champ_logo_block = (
+            '        <span class="crest" style="transform:none;background:var(--black);"><picture>\n'
+            f'          <source type="image/webp" srcset="{champ_logo}.webp">\n'
+            f'          <img src="{champ_logo}.png" alt="{H(champion)}" loading="lazy" />\n'
+            '        </picture></span>'
+        )
+    else:
+        champ_logo_block = '        <span class="crest" style="transform:none;background:var(--black);"></span>'
+
+    return (
+        f'      <div class="matchup-side home" data-season-state="complete" data-season-year="{year}">\n'
+        '        <span class="crest" style="transform:none;background:var(--black);"><picture>\n'
+        '          <source type="image/webp" srcset="brand_assets/Fayetteville_Fox_Logo_BLK.webp">\n'
+        '          <img src="brand_assets/Fayetteville_Fox_Logo_BLK.png" alt="Fayetteville Foxes" '
+        'loading="lazy" />\n'
+        '        </picture></span>\n'
+        f'        <div class="place mono">{year} Season</div>\n'
+        '        <div class="team-name">Fayetteville <em>Foxes</em></div>\n'
+        f'        <div class="record" data-foxes-record="dotted">{H(fox_record)}</div>\n'
+        '      </div>\n'
+        '\n'
+        '      <div class="matchup-vs">\n'
+        f'        <div class="vs-big">{year_short}</div>\n'
+        '        <div class="kick">Season Complete</div>\n'
+        '        <div class="season-note mono">That’s a wrap.<br>See you next fall.</div>\n'
+        '      </div>\n'
+        '\n'
+        '      <div class="matchup-side champ">\n'
+        f'{champ_logo_block}\n'
+        f'        <div class="place mono">{year} Champions</div>\n'
+        f'        <div class="team-name">{H(champion)}</div>\n'
+        '        <div class="record"><span class="champ-tag mono">\U0001f3c6 League Champions</span></div>\n'
+        '      </div>\n'
+        '\n'
+        '      <div class="matchup-meta" style="grid-column:1 / -1;">\n'
+        '        <div class="cell">\n'
+        '          <span class="label mono">Final Record</span>\n'
+        f'          <span class="val">{H(fox_record)}</span>\n'
+        '        </div>\n'
+        '        <div class="cell">\n'
+        '          <span class="label mono">Final Standing</span>\n'
+        f'          <span class="val">{H(standing)}</span>\n'
+        '        </div>\n'
+        '        <div class="cell">\n'
+        '          <span class="label mono">League Champion</span>\n'
+        f'          <span class="val"><em>{H(champion)}</em></span>\n'
+        '        </div>\n'
+        '        <div class="cell">\n'
+        '          <span class="label mono">Season Replays</span>\n'
+        '          <span class="val"><a href="https://www.livebarn.com/" target="_blank" '
+        'rel="noopener noreferrer" style="color:var(--orange);'
+        'border-bottom:1px solid rgba(255,85,0,0.4);padding-bottom:1px;">LiveBarn ↗</a></span>\n'
+        '        </div>\n'
+        '      </div>'
+    )
+
+
 # Playoff-game keywords used to detect non-regular-season games in the API's
 # `game.type` field. The league hasn't published playoff types yet so this is
 # a best-effort match against common naming conventions.
@@ -735,7 +825,8 @@ def looks_like_playoff(game_type: str | None) -> bool:
 
 
 def build_matchup_block(
-    upcoming: list[dict], standings: list[dict], played: list[dict]
+    upcoming: list[dict], standings: list[dict], played: list[dict],
+    champion: str | None = None,
 ) -> str | None:
     """Build the matchup hero card (Fayetteville vs next opponent).
 
@@ -743,9 +834,11 @@ def build_matchup_block(
     completed games in the 'upcoming' feed until manually marked, so without
     this filter the matchup card would stay stuck on yesterday's game forever.
 
-    When no future Foxes games exist (between regular-season end and the
-    playoff schedule being published), returns a 'Playoffs ahead — TBD'
-    placeholder instead of leaving the previous game's card stale.
+    When no future Foxes games exist, returns one of two placeholders:
+      • If a league champion has been decided (`champion` set), the season is
+        over → a 'Season Complete' wrap-up card.
+      • Otherwise (e.g. between regular-season end and the playoff schedule
+        being published) → a 'Playoffs ahead — TBD' holding card.
     """
     now_utc = datetime.now(timezone.utc)
     foxes_upcoming = [
@@ -754,6 +847,10 @@ def build_matchup_block(
         and is_future(g, now_utc)
     ]
     if not foxes_upcoming:
+        if champion:
+            return build_season_complete_matchup_block(
+                standings, champion, _season_year(played)
+            )
         return build_tbd_matchup_block(standings)
     foxes_upcoming.sort(key=lambda g: g.get("scheduleStartTime", ""))
     g = foxes_upcoming[0]
@@ -1207,7 +1304,9 @@ def main(argv: list[str] | None = None) -> int:
     goalie_block = build_goalie_block(goalies, svp_overrides, existing_jerseys)
     schedule_list_block = build_schedule_list_block(upcoming, played)
     ticker_block = build_ticker_block(played)
-    matchup_block = build_matchup_block(upcoming, standings, played)
+    matchup_block = build_matchup_block(
+        upcoming, standings, played, merged_playoffs.get("champion")
+    )
     playoff_results_block = build_playoff_results_block(merged_playoffs)
 
     html_new = html_old

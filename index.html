@@ -511,6 +511,21 @@
   .matchup-meta .cell .val{font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:0.08em;color:var(--bone);}
   .matchup-meta .cell .val em{color:var(--orange);font-style:normal;}
 
+  /* Season-complete card (shown after the championship, no games remaining). */
+  .matchup-vs .season-note{
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.08em;
+    line-height:1.8;text-transform:uppercase;color:var(--smoke);margin-top:6px;
+  }
+  .matchup-side.champ .crest img{width:170px;height:170px;object-fit:contain;display:block;filter:drop-shadow(0 10px 30px rgba(255,85,0,0.22));}
+  .matchup-side.champ .place{color:var(--orange);}
+  .matchup-side.champ .team-name em{color:var(--orange);}
+  .champ-tag{
+    display:inline-flex;align-items:center;gap:6px;
+    font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;
+    text-transform:uppercase;color:var(--orange);
+    border:1px solid rgba(255,85,0,0.4);border-radius:999px;padding:5px 11px;
+  }
+
   /* ───────── SCHEDULE TABLE ───────── */
   .schedule{
     margin-top:48px;border-top:1px solid var(--line);
@@ -1257,7 +1272,7 @@
         <!-- Placeholders. JS sync overwrites these on DOMContentLoaded from
              the matchup-meta source. Showing "—" instead of a hardcoded last
              game avoids a flash of stale data on slow connections / JS off. -->
-        <div>Next Puck Drop <b data-target="hero-when">—</b></div>
+        <div><span data-target="hero-when-label">Next Puck Drop</span> <b data-target="hero-when">—</b></div>
         <div data-target="hero-where">—</div>
       </div>
     </div>
@@ -1378,7 +1393,7 @@
   <div class="wrap">
     <div class="section-head">
       <div>
-        <div class="section-label">02 / Next Puck Drop</div>
+        <div class="section-label" data-target="section-02-label">02 / Next Puck Drop</div>
         <h2 class="section-title display"><span data-target="next-game-phrase">Wednesday night</span>. <em>Wear orange.</em></h2>
       </div>
       <p class="section-lede">Warmups start at <b data-target="warmup-time">06:45</b> — one hour before the <b data-target="puckdrop-time">07:45</b> puck drop. After three periods we expect you to have lost your voice.</p>
@@ -1386,49 +1401,47 @@
 
     <div class="matchup">
       <!-- BEGIN auto:matchup -->
-      <div class="matchup-side home">
+      <div class="matchup-side home" data-season-state="complete" data-season-year="2026">
         <span class="crest" style="transform:none;background:var(--black);"><picture>
           <source type="image/webp" srcset="brand_assets/Fayetteville_Fox_Logo_BLK.webp">
           <img src="brand_assets/Fayetteville_Fox_Logo_BLK.png" alt="Fayetteville Foxes" loading="lazy" />
         </picture></span>
-        <div class="place mono">Playoffs ahead</div>
+        <div class="place mono">2026 Season</div>
         <div class="team-name">Fayetteville <em>Foxes</em></div>
         <div class="record" data-foxes-record="dotted">4W · 4L · 1T</div>
       </div>
 
       <div class="matchup-vs">
-        <div class="vs-big">VS</div>
-        <div class="kick">Playoffs · Schedule pending</div>
-        <div class="count" id="countdown" aria-live="off">
-          <span class="seg"><span class="num" data-cd="d">—</span><span class="u">: Days</span></span>
-          <span class="seg"><span class="num" data-cd="h">—</span><span class="u">: Hours</span></span>
-          <span class="seg"><span class="num" data-cd="m">—</span><span class="u">: Mins</span></span>
-          <span class="seg"><span class="num" data-cd="s">—</span><span class="u">: Secs</span></span>
-        </div>
+        <div class="vs-big">’26</div>
+        <div class="kick">Season Complete</div>
+        <div class="season-note mono">That’s a wrap.<br>See you next fall.</div>
       </div>
 
-      <div class="matchup-side">
-        <span class="crest" style="transform:none;background:var(--black);"></span>
-        <div class="place mono">Awaiting bracket</div>
-        <div class="team-name">TBD</div>
-        <div class="record">—</div>
+      <div class="matchup-side champ">
+        <span class="crest" style="transform:none;background:var(--black);"><picture>
+          <source type="image/webp" srcset="South%20Apex.webp">
+          <img src="South%20Apex.png" alt="South Apex" loading="lazy" />
+        </picture></span>
+        <div class="place mono">2026 Champions</div>
+        <div class="team-name">South Apex</div>
+        <div class="record"><span class="champ-tag mono">🏆 League Champions</span></div>
       </div>
 
       <div class="matchup-meta" style="grid-column:1 / -1;">
         <div class="cell">
-          <span class="label mono">Date</span>
-          <span class="val" data-meta="date">TBD</span>
+          <span class="label mono">Final Record</span>
+          <span class="val">4W · 4L · 1T</span>
         </div>
         <div class="cell">
-          <span class="label mono">Puck Drop</span>
-          <span class="val" data-puckdrop-iso=""><em data-meta="puckdrop-time">TBD</em></span>
+          <span class="label mono">Final Standing</span>
+          <span class="val">#3 of 8</span>
         </div>
         <div class="cell">
-          <span class="label mono">Venue</span>
-          <span class="val" data-meta="venue">TBD</span>
+          <span class="label mono">League Champion</span>
+          <span class="val"><em>South Apex</em></span>
         </div>
         <div class="cell">
-          <span class="label mono">Broadcast</span>
+          <span class="label mono">Season Replays</span>
           <span class="val"><a href="https://www.livebarn.com/" target="_blank" rel="noopener noreferrer" style="color:var(--orange);border-bottom:1px solid rgba(255,85,0,0.4);padding-bottom:1px;">LiveBarn ↗</a></span>
         </div>
       </div>
@@ -2505,6 +2518,30 @@
     if (Date.now() < targetMs) timer = setInterval(tick, 1000);
   })();
 
+  // Season-complete override. When the daily updater detects a league champion
+  // and no future Foxes games remain, it stamps the matchup card's home side
+  // with data-season-state="complete". The "next game" UI (top banner, section
+  // title/lede, countdown) is meaningless then, so we swap in a season wrap-up
+  // holding state and set a flag the per-game sync blocks below bail out on.
+  (function(){
+    const marker = document.querySelector('[data-season-state="complete"]');
+    if (!marker) return;
+    window.__seasonComplete = true;
+    const yr = (marker.dataset.seasonYear || '').trim();
+    const set = (sel, txt) => { const el = document.querySelector(sel); if (el) el.textContent = txt; };
+    // Top-of-page banner: "Next Puck Drop —" → "<yr> Season · Complete".
+    set('[data-target="hero-when-label"]', (yr ? yr + ' ' : '') + 'Season');
+    set('[data-target="hero-when"]', 'Complete');
+    set('[data-target="hero-where"]', 'See you next fall');
+    // Section 02 heading + lede.
+    set('[data-target="section-02-label"]', '02 / The Final Whistle');
+    set('[data-target="next-game-phrase"]', 'That’s a wrap on ' + (yr || 'the season'));
+    const lede = document.querySelector('#schedule .section-lede');
+    if (lede) lede.textContent =
+      'The Foxes have closed out their ' + (yr ? yr + ' ' : '') +
+      'season. Thanks for packing the stands all year — warmups will be back before you know it.';
+  })();
+
   // Sync the hero "Next Puck Drop" banner with the matchup hero card.
   //
   // Sources (all inside the auto:matchup region, regenerated by the daily updater):
@@ -2519,6 +2556,7 @@
   // featured row, the IIFE early-returned, and the banner was stuck on its
   // static fallback. Reading from the matchup card is always available.
   (function(){
+    if (window.__seasonComplete) return;   // season-over card has no next game
     const dateEl   = document.querySelector('[data-meta="date"]');
     const timeEl   = document.querySelector('[data-meta="puckdrop-time"]');
     const venueEl  = document.querySelector('[data-meta="venue"]');
@@ -2568,6 +2606,7 @@
   // targets fall back to a "Playoffs ahead / —" holding state instead of being
   // left stale from the previous game.
   (function(){
+    if (window.__seasonComplete) return;   // season-over card: keep wrap-up title/lede
     const src = document.querySelector('[data-meta="puckdrop-time"]');
     if (!src) return;
     const puckText = src.textContent.trim();
