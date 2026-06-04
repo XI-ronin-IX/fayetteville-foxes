@@ -19,7 +19,10 @@ When the league publishes the next season on gamesheetstats.com:
      archive, served at `/<previous-year>` thanks to `cleanUrls`),
    - updates `scripts/season_config.json` (old season → `archives`, new season →
      `current`),
-   - regenerates `index.html` as a preseason shell.
+   - regenerates `index.html` as a preseason shell — standings/schedule/stats
+     show "coming soon" placeholders, the record/standing read 0-0-0 / `#/8`,
+     and the roster + coaching staff reset to "TBA" placeholder cards (last
+     season's players/coaches do not carry over).
 
 3. **Review the diff, then commit and push.** The nightly cron takes over and
    fills in roster / schedule / standings / scores automatically as the league
