@@ -1276,6 +1276,18 @@ def build_season_meta_block(year: int) -> str:
     )
 
 
+def build_seasons_nav_block(cfg: dict) -> str:
+    """Dropdown links for the 'Seasons' nav menu. Always offers the live
+    current season at '/', plus one link per archived year at '/<year>'.
+    Archived years are listed newest-first."""
+    items = ['        <a role="menuitem" href="/">Current season</a>']
+    years = sorted({a.get("year") for a in cfg.get("archives", []) if a.get("year")},
+                   reverse=True)
+    for y in years:
+        items.append(f'        <a role="menuitem" href="/{H(y)}">{H(y)}</a>')
+    return "\n".join(items)
+
+
 def build_playoff_results_block(merged: dict) -> str:
     """Generate the <script type="application/json"> block for the auto-region.
 
@@ -1361,6 +1373,8 @@ def main(argv: list[str] | None = None) -> int:
             sys.stdout.reconfigure(encoding="utf-8")
         except Exception:
             pass
+    # (Re)load the current-season identity into the module globals.
+    cfg = _init_season()
     p = argparse.ArgumentParser(description="Update auto-managed sections of index.html")
     p.add_argument("--first-run", action="store_true",
                    help="(Deprecated) No-op flag, kept for backwards compat. "
@@ -1445,6 +1459,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  detected playoff winners from API: {detected_now}")
 
     season_meta_block = build_season_meta_block(SEASON_YEAR)
+    seasons_nav_block = build_seasons_nav_block(cfg)
     standings_block = build_standings_block(standings)
     skater_block = build_skater_block(skaters, existing_jerseys)
     goalie_block = build_goalie_block(goalies, svp_overrides, existing_jerseys)
@@ -1457,6 +1472,9 @@ def main(argv: list[str] | None = None) -> int:
 
     html_new = html_old
     html_new = replace_region(html_new, "season-meta", season_meta_block)
+    html_new = replace_region(html_new, "seasons-nav", seasons_nav_block)
+    html_new = replace_region(html_new, "seasons-nav-mobile",
+                              seasons_nav_block.replace('role="menuitem" ', 'class="mm-item" '))
     html_new = replace_region(html_new, "standings", standings_block)
     html_new = replace_region(html_new, "skaters", skater_block)
     html_new = replace_region(html_new, "goalies", goalie_block)

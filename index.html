@@ -132,6 +132,27 @@
     content:"";position:absolute;left:-12px;top:50%;transform:translateY(-50%);
     width:6px;height:6px;background:var(--orange);
   }
+  .nav-seasons{position:relative;display:inline-flex;}
+  .nav-seasons-btn{
+    background:none;border:none;cursor:pointer;padding:6px 0;
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;
+    text-transform:uppercase;color:var(--smoke);transition:color .2s ease;
+  }
+  .nav-seasons-btn:hover,.nav-seasons-btn:focus-visible{color:var(--bone);}
+  .nav-seasons-menu{
+    position:absolute;right:0;top:calc(100% + 10px);min-width:180px;
+    background:var(--ink);border:1px solid var(--line-strong);
+    display:none;flex-direction:column;z-index:60;
+    box-shadow:0 18px 40px -12px rgba(0,0,0,0.6);
+  }
+  .nav-seasons.open .nav-seasons-menu{display:flex;}
+  .nav-seasons-menu a{
+    padding:11px 14px;color:var(--bone);
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.12em;
+    text-transform:uppercase;transition:background .15s ease,color .15s ease;
+  }
+  .nav-seasons-menu a:hover,.nav-seasons-menu a:focus-visible{background:var(--ink-2);color:var(--orange);}
+  .mm-seasons-label{margin-top:14px;color:var(--smoke);font-size:11px;letter-spacing:0.16em;text-transform:uppercase;}
   .nav-cta{
     display:inline-flex;align-items:center;gap:10px;
     padding:10px 16px;background:var(--orange);color:var(--black);
@@ -1245,6 +1266,14 @@
       <a href="#roster">Roster</a>
       <a href="#stats">Stats</a>
       <a href="#gameday">Gameday</a>
+      <div class="nav-seasons">
+        <button type="button" class="nav-seasons-btn" aria-haspopup="true" aria-expanded="false">Seasons ▾</button>
+        <div class="nav-seasons-menu" role="menu">
+          <!-- BEGIN auto:seasons-nav -->
+        <a role="menuitem" href="/">Current season</a>
+          <!-- END auto:seasons-nav -->
+        </div>
+      </div>
     </nav>
     <div class="nav-actions">
       <button type="button" class="nav-hamburger" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobile-menu">
@@ -1264,6 +1293,10 @@
     <a class="mm-item" href="#standings">Standings</a>
     <a class="mm-item" href="#scoring">Stats</a>
     <a class="mm-item" href="#coaches">Coaches</a>
+    <div class="mm-seasons-label mono">Seasons</div>
+    <!-- BEGIN auto:seasons-nav-mobile -->
+        <a class="mm-item" href="/">Current season</a>
+    <!-- END auto:seasons-nav-mobile -->
     <a class="mm-item mm-ig" href="https://www.instagram.com/fayettevillehockey?igsh=bHljZHE4cDlheTRu" target="_blank" rel="noopener noreferrer">
       Instagram <em>@fayettevillehockey</em>
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -2548,6 +2581,21 @@
     document.querySelectorAll('[data-season-year]').forEach(n => { n.textContent = String(year); });
     const yy = String(year % 100).padStart(2, '0');
     document.querySelectorAll('[data-season-yy]').forEach(n => { n.textContent = yy; });
+  })();
+
+  // Seasons dropdown (desktop): toggle, close on outside click / Escape.
+  (function(){
+    const wrap = document.querySelector('.nav-seasons');
+    if (!wrap) return;
+    const btn = wrap.querySelector('.nav-seasons-btn');
+    const close = () => { wrap.classList.remove('open'); btn.setAttribute('aria-expanded', 'false'); };
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const open = wrap.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    document.addEventListener('click', (e) => { if (!wrap.contains(e.target)) close(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
   })();
 
   // Season holding-state override. The daily updater stamps the matchup card's

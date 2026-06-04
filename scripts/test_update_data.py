@@ -98,5 +98,23 @@ class TestEmptyStates(unittest.TestCase):
         self.assertIn('data-season-state="preseason"', block)
 
 
+class TestSeasonsNav(unittest.TestCase):
+    def test_nav_lists_current_and_archives(self):
+        cfg = {"current": {"year": 2027, "season_id": "x", "team_id": "",
+                           "team_name": "Team Fayetteville"},
+               "archives": [{"year": 2026}]}
+        out = ud.build_seasons_nav_block(cfg)
+        self.assertIn('href="/"', out)          # current season
+        self.assertIn('href="/2026"', out)      # archive link
+        self.assertIn("2026", out)
+
+    def test_nav_no_archives_still_has_current(self):
+        cfg = {"current": {"year": 2026, "season_id": "x", "team_id": "",
+                           "team_name": "Team Fayetteville"},
+               "archives": []}
+        out = ud.build_seasons_nav_block(cfg)
+        self.assertIn('href="/"', out)
+
+
 if __name__ == "__main__":
     unittest.main()
