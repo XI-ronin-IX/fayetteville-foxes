@@ -2584,9 +2584,12 @@
     const el = document.getElementById('season-meta');
     if (el) { try { year = JSON.parse(el.textContent).year; } catch (_) {} }
     if (year == null) return;
-    document.querySelectorAll('[data-season-year]').forEach(n => { n.textContent = String(year); });
+    // Only fill leaf DISPLAY hooks. Exclude state-marker elements (the matchup
+    // card's home side carries data-season-year as DATA and has children we must
+    // not overwrite — otherwise the crest/name/record get replaced by the year).
+    document.querySelectorAll('[data-season-year]:not([data-season-state])').forEach(n => { n.textContent = String(year); });
     const yy = String(year % 100).padStart(2, '0');
-    document.querySelectorAll('[data-season-yy]').forEach(n => { n.textContent = yy; });
+    document.querySelectorAll('[data-season-yy]:not([data-season-state])').forEach(n => { n.textContent = yy; });
   })();
 
   // Seasons dropdown (desktop): toggle, close on outside click / Escape.
