@@ -71,5 +71,32 @@ class TestSeasonMeta(unittest.TestCase):
         self.assertNotIn("</script></script>", block)
 
 
+class TestEmptyStates(unittest.TestCase):
+    def test_standings_empty_shows_placeholder(self):
+        out = ud.build_standings_block([])
+        self.assertIn("hasn", out.lower())  # "hasn't started"
+        self.assertIn("table-empty", out)
+
+    def test_skaters_empty_shows_placeholder(self):
+        out = ud.build_skater_block([], {})
+        self.assertIn("table-empty", out)
+        self.assertIn("roster", out.lower())
+
+    def test_goalies_empty_shows_placeholder(self):
+        out = ud.build_goalie_block([], {}, {})
+        self.assertIn("table-empty", out)
+
+    def test_schedule_empty_shows_placeholder(self):
+        out = ud.build_schedule_list_block([], [])
+        self.assertIn("sched-empty", out)
+        self.assertIn("tba", out.lower())
+
+    def test_matchup_preseason_when_no_games(self):
+        # No upcoming, no played Foxes games, no champion -> preseason card.
+        block = ud.build_matchup_block([], [], [], None)
+        self.assertIn("Preseason", block)
+        self.assertIn('data-season-state="preseason"', block)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -687,6 +687,11 @@
     background:var(--ink);
   }
   /* Default grid (skaters — 9 cols) */
+  .table-empty, .sched-empty{
+    padding:28px 18px;text-align:center;
+    font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.06em;
+    color:var(--smoke);text-transform:uppercase;line-height:1.7;
+  }
   .stats-row{
     display:grid;
     grid-template-columns:48px minmax(180px, 1fr) repeat(7, 52px);
@@ -2545,28 +2550,32 @@
     document.querySelectorAll('[data-season-yy]').forEach(n => { n.textContent = yy; });
   })();
 
-  // Season-complete override. When the daily updater detects a league champion
-  // and no future Foxes games remain, it stamps the matchup card's home side
-  // with data-season-state="complete". The "next game" UI (top banner, section
-  // title/lede, countdown) is meaningless then, so we swap in a season wrap-up
-  // holding state and set a flag the per-game sync blocks below bail out on.
+  // Season holding-state override. The daily updater stamps the matchup card's
+  // home side with data-season-state="complete" (championship decided) or
+  // "preseason" (no games yet). In both cases the "next game" UI (top banner,
+  // section title/lede, countdown) is meaningless, so we swap in a holding
+  // message and set a flag the per-game sync blocks below bail out on.
   (function(){
-    const marker = document.querySelector('[data-season-state="complete"]');
+    const marker = document.querySelector('[data-season-state="complete"], [data-season-state="preseason"]');
     if (!marker) return;
-    window.__seasonComplete = true;
+    const preseason = marker.dataset.seasonState === 'preseason';
+    window.__seasonComplete = true;   // flag name kept; means "suppress next-game UI"
     const yr = (marker.dataset.seasonYear || '').trim();
     const set = (sel, txt) => { const el = document.querySelector(sel); if (el) el.textContent = txt; };
-    // Top-of-page banner: "Next Puck Drop —" → "<yr> Season · Complete".
+    // Top-of-page banner.
     set('[data-target="hero-when-label"]', (yr ? yr + ' ' : '') + 'Season');
-    set('[data-target="hero-when"]', 'Complete');
-    set('[data-target="hero-where"]', 'See you next year');
+    set('[data-target="hero-when"]', preseason ? 'Preseason' : 'Complete');
+    set('[data-target="hero-where"]', preseason ? 'Schedule coming soon' : 'See you next year');
     // Section 02 heading + lede.
-    set('[data-target="section-02-label"]', '02 / The Final Whistle');
-    set('[data-target="next-game-phrase"]', 'That’s a wrap on ' + (yr || 'the season'));
+    set('[data-target="section-02-label"]', preseason ? '02 / Preseason' : '02 / The Final Whistle');
+    set('[data-target="next-game-phrase"]', preseason
+        ? 'The ' + (yr || 'new') + ' season is almost here'
+        : 'That’s a wrap on ' + (yr || 'the season'));
     const lede = document.querySelector('#schedule .section-lede');
-    if (lede) lede.textContent =
-      'The Foxes have closed out their ' + (yr ? yr + ' ' : '') +
-      'season. Thanks for packing the stands all year — warmups will be back before you know it.';
+    if (lede) lede.textContent = preseason
+      ? 'The ' + (yr ? yr + ' ' : '') + 'season hasn’t started yet — schedule, roster, and standings will fill in automatically as the league publishes them.'
+      : 'The Foxes have closed out their ' + (yr ? yr + ' ' : '') +
+        'season. Thanks for packing the stands all year — warmups will be back before you know it.';
   })();
 
   // Sync the hero "Next Puck Drop" banner with the matchup hero card.

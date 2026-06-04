@@ -439,6 +439,12 @@ def fmt_long_date(d: date) -> str:
 
 
 def build_standings_block(teams: list[dict]) -> str:
+    if not teams:
+        return (
+            '      <div class="table-empty">'
+            f'The {SEASON_YEAR} season hasn’t started yet — standings will appear once games are played.'
+            '</div>'
+        )
     rows: list[str] = []
     for t in teams:
         diff_text, diff_cls = fmt_diff(t["diff"])
@@ -475,6 +481,12 @@ def build_standings_block(teams: list[dict]) -> str:
 def build_skater_block(players: list[dict], existing_jerseys: dict[str, str]) -> str:
     """Build the skaters table rows. existing_jerseys maps name → jersey
     (used as fallback for players whose jersey isn't in the API response)."""
+    if not players:
+        return (
+            '      <div class="table-empty">'
+            'Roster announced closer to the season.'
+            '</div>'
+        )
     rows: list[str] = []
     for p in players:
         jersey = p["jersey"] or existing_jerseys.get(p["display_name"], "")
@@ -499,6 +511,12 @@ def build_goalie_block(
     svp_overrides: dict[str, str] | None,
     existing_jerseys: dict[str, str],
 ) -> str:
+    if not goalies:
+        return (
+            '      <div class="table-empty">'
+            'Goalie roster announced closer to the season.'
+            '</div>'
+        )
     rows: list[str] = []
     for g in goalies:
         # Roster jersey is authoritative; API can have it wrong for goalies.
@@ -537,6 +555,12 @@ def build_schedule_list_block(
     upcoming: list[dict], played: list[dict]
 ) -> str:
     """Build the .sched-row rows: [featured, upcoming…, played (newest first)]."""
+    if not upcoming and not played:
+        return (
+            '      <div class="sched-empty">'
+            f'Schedule TBA — the {SEASON_YEAR} slate hasn’t been published yet.'
+            '</div>'
+        )
     now_utc = datetime.now(timezone.utc)
     foxes_upcoming = [
         g for g in upcoming
@@ -751,6 +775,58 @@ def build_tbd_matchup_block(standings: list[dict]) -> str:
     )
 
 
+def build_preseason_matchup_block(year: int) -> str:
+    """Matchup card for before a season's first game — no opponent, no
+    countdown. The data-season-state="preseason" marker lets the page JS show a
+    'preseason' holding state for the banner/title instead of a next-game UI."""
+    return (
+        f'      <div class="matchup-side home" data-season-state="preseason" data-season-year="{year}">\n'
+        '        <span class="crest" style="transform:none;background:var(--black);"><picture>\n'
+        '          <source type="image/webp" srcset="brand_assets/Fayetteville_Fox_Logo_BLK.webp">\n'
+        '          <img src="brand_assets/Fayetteville_Fox_Logo_BLK.png" alt="Fayetteville Foxes" '
+        'loading="lazy" />\n'
+        '        </picture></span>\n'
+        f'        <div class="place mono">{year} Season</div>\n'
+        '        <div class="team-name">Fayetteville <em>Foxes</em></div>\n'
+        '        <div class="record" data-foxes-record="dotted">—</div>\n'
+        '      </div>\n'
+        '\n'
+        '      <div class="matchup-vs">\n'
+        '        <div class="vs-big">SOON</div>\n'
+        '        <div class="kick">Preseason</div>\n'
+        '        <div class="season-note mono">Schedule TBA.<br>Check back before puck drop.</div>\n'
+        '      </div>\n'
+        '\n'
+        '      <div class="matchup-side">\n'
+        '        <span class="crest" style="transform:none;background:var(--black);"></span>\n'
+        '        <div class="place mono">First opponent</div>\n'
+        '        <div class="team-name">TBA</div>\n'
+        '        <div class="record">—</div>\n'
+        '      </div>\n'
+        '\n'
+        '      <div class="matchup-meta" style="grid-column:1 / -1;">\n'
+        '        <div class="cell">\n'
+        '          <span class="label mono">Status</span>\n'
+        f'          <span class="val"><em>{year} preseason</em></span>\n'
+        '        </div>\n'
+        '        <div class="cell">\n'
+        '          <span class="label mono">Schedule</span>\n'
+        '          <span class="val">TBA</span>\n'
+        '        </div>\n'
+        '        <div class="cell">\n'
+        '          <span class="label mono">Roster</span>\n'
+        '          <span class="val">Coming soon</span>\n'
+        '        </div>\n'
+        '        <div class="cell">\n'
+        '          <span class="label mono">Broadcast</span>\n'
+        '          <span class="val"><a href="https://www.livebarn.com/" target="_blank" '
+        'rel="noopener noreferrer" style="color:var(--orange);'
+        'border-bottom:1px solid rgba(255,85,0,0.4);padding-bottom:1px;">LiveBarn ↗</a></span>\n'
+        '        </div>\n'
+        '      </div>'
+    )
+
+
 def _season_year(played: list[dict]) -> int:
     """Best-effort season year — the latest 4-digit year seen in played-game
     date strings ("May 29, 2026"), falling back to the current ET year."""
@@ -884,6 +960,13 @@ def build_matchup_block(
             return build_season_complete_matchup_block(
                 standings, champion, _season_year(played)
             )
+        foxes_played = any(
+            FAYETTEVILLE_TEAM_NAME in (pg["game"]["homeTeam"]["name"],
+                                       pg["game"]["visitorTeam"]["name"])
+            for pg in played
+        )
+        if not foxes_played:
+            return build_preseason_matchup_block(SEASON_YEAR)
         return build_tbd_matchup_block(standings)
     foxes_upcoming.sort(key=lambda g: g.get("scheduleStartTime", ""))
     g = foxes_upcoming[0]
