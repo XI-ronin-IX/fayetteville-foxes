@@ -135,8 +135,13 @@ class TestRollover(unittest.TestCase):
                 + region("skaters")
                 + region("goalies")
                 + region("schedule-list")
-                + region("ticker")
-                + region("playoff-results")
+                # Seed last season's ticker scores to prove they get cleared.
+                + region("ticker", '<span>L Foxes 0 — 3 South Apex May 29</span>')
+                # Seed last season's champion so we can prove the rollover does
+                # NOT carry it into the new season.
+                + region("playoff-results",
+                         '{"semi1Winner": "Durham", "semi2Winner": "South Apex", '
+                         '"champion": "South Apex"}')
                 + region("seasons-nav")
                 + region("seasons-nav-mobile"),
                 encoding="utf-8")
@@ -164,6 +169,9 @@ class TestRollover(unittest.TestCase):
             new_html = index.read_text(encoding="utf-8")
             self.assertIn('"year": 2027', new_html)
             self.assertIn("Preseason", new_html)
+            # Last season's champion must NOT bleed into the fresh season.
+            self.assertNotIn("South Apex", new_html)
+            self.assertIn('"champion": null', new_html)
 
 
 if __name__ == "__main__":

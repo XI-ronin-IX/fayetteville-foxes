@@ -1366,11 +1366,17 @@ def did_foxes_play_today(played: list[dict]) -> bool:
     return False
 
 
-def regenerate_index(html_old: str, cfg: dict) -> str:
+def regenerate_index(html_old: str, cfg: dict, fresh: bool = False) -> str:
     """Rebuild every auto-region in `html_old` from the current API + cfg and
     return the new HTML. Shared by the normal update and the rollover scaffold.
     Relies on the module-level season globals already being initialized for the
-    season in `cfg` (see _init_season)."""
+    season in `cfg` (see _init_season).
+
+    `fresh=True` (rollover scaffold) starts the season clean: it does NOT carry
+    forward the previous season's playoff results, manual SV%, or jerseys from
+    `html_old` — those belong to the season being archived, not the new one.
+    The normal nightly update uses fresh=False to preserve within-season manual
+    edits."""
     print(f"[fetch] standings", flush=True)
     standings = fetch_standings()
     print(f"[fetch] played-games", flush=True)
@@ -1388,18 +1394,20 @@ def regenerate_index(html_old: str, cfg: dict) -> str:
     print(f"  skaters:   {len(skaters)} Fayetteville players")
     print(f"  goalies:   {len(goalies)} Fayetteville goalies")
 
-    existing_jerseys = extract_existing_jerseys(html_old)
+    # A fresh-season scaffold starts clean — none of the previous season's
+    # manual edits or playoff results carry over.
+    existing_jerseys = {} if fresh else extract_existing_jerseys(html_old)
     # Always preserve manual goalie SV% — the league portal returns 0.000 (their
     # SA/GA accounting differs from ours), so the API value is not reliable. The
     # user maintains SV% by hand in index.html; the script touches everything
     # else but leaves SV% alone.
-    svp_overrides = extract_existing_svpct(html_old)
+    svp_overrides = {} if fresh else extract_existing_svpct(html_old)
     if svp_overrides:
         print(f"  preserving manual SV% for {list(svp_overrides)}")
 
     # Playoff results: merge auto-detected winners with whatever's already in
     # the JSON block (manual overrides win when auto-detect comes up empty).
-    existing_playoffs = extract_existing_playoff_results(html_old)
+    existing_playoffs = {} if fresh else extract_existing_playoff_results(html_old)
     auto_playoffs = detect_playoff_results(standings, played)
     merged_playoffs = {
         key: (auto_playoffs.get(key) if auto_playoffs.get(key) is not None
@@ -1439,6 +1447,10 @@ def regenerate_index(html_old: str, cfg: dict) -> str:
     html_new = replace_region(html_new, "schedule-list", schedule_list_block)
     if ticker_block:
         html_new = replace_region(html_new, "ticker", ticker_block)
+    elif fresh:
+        # Fresh season with no games yet: clear last season's ticker scores
+        # rather than leaving them (the "if ticker_block" guard would skip it).
+        html_new = replace_region(html_new, "ticker", "")
     if matchup_block:
         html_new = replace_region(html_new, "matchup", matchup_block)
     html_new = replace_region(html_new, "playoff-results", playoff_results_block)
@@ -1474,9 +1486,10 @@ def run_rollover(new_year: int, season_id: str, team_id: str | None,
     _init_season(new_cfg)
     print(f"[config] current season is now {new_year} (season_id={season_id})")
 
-    # 3. Regenerate index.html against the new (mostly empty) season.
+    # 3. Regenerate index.html against the new (mostly empty) season. fresh=True
+    #    so last season's bracket / SV% / jerseys do not bleed into the new one.
     html_old = index_path.read_text(encoding="utf-8")
-    html_new = regenerate_index(html_old, new_cfg)
+    html_new = regenerate_index(html_old, new_cfg, fresh=True)
     index_path.write_text(html_new, encoding="utf-8")
     print(f"[scaffold] wrote preseason {new_year} shell to {index_path.name}")
     return 0
