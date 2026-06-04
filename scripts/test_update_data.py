@@ -18,6 +18,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import season_config as sc  # noqa: E402
+import update_data as ud  # noqa: E402
 
 
 class TestSeasonConfig(unittest.TestCase):
@@ -60,6 +61,14 @@ class TestSeasonConfig(unittest.TestCase):
                "archives": []}
         with self.assertRaises(ValueError):
             sc.rollover(cfg, new_year=2027, season_id="")
+
+
+class TestSeasonMeta(unittest.TestCase):
+    def test_season_meta_block_contains_year(self):
+        block = ud.build_season_meta_block(2027)
+        self.assertIn('"year": 2027', block)
+        self.assertIn('id="season-meta"', block)
+        self.assertNotIn("</script></script>", block)
 
 
 if __name__ == "__main__":

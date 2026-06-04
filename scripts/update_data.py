@@ -1182,6 +1182,17 @@ def detect_playoff_results(
     return out
 
 
+def build_season_meta_block(year: int) -> str:
+    """Embedded JSON consumed by the page's year-stamper JS. Same JSON-in-HTML
+    escaping discipline as build_playoff_results_block."""
+    payload = json.dumps({"year": int(year)}).replace("</", "<\\/")
+    return (
+        '    <script type="application/json" id="season-meta">\n'
+        f'{payload}\n'
+        '    </script>'
+    )
+
+
 def build_playoff_results_block(merged: dict) -> str:
     """Generate the <script type="application/json"> block for the auto-region.
 
@@ -1350,6 +1361,7 @@ def main(argv: list[str] | None = None) -> int:
     if detected_now:
         print(f"  detected playoff winners from API: {detected_now}")
 
+    season_meta_block = build_season_meta_block(SEASON_YEAR)
     standings_block = build_standings_block(standings)
     skater_block = build_skater_block(skaters, existing_jerseys)
     goalie_block = build_goalie_block(goalies, svp_overrides, existing_jerseys)
@@ -1361,6 +1373,7 @@ def main(argv: list[str] | None = None) -> int:
     playoff_results_block = build_playoff_results_block(merged_playoffs)
 
     html_new = html_old
+    html_new = replace_region(html_new, "season-meta", season_meta_block)
     html_new = replace_region(html_new, "standings", standings_block)
     html_new = replace_region(html_new, "skaters", skater_block)
     html_new = replace_region(html_new, "goalies", goalie_block)

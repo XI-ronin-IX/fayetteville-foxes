@@ -1217,6 +1217,12 @@
 </head>
 <body>
 
+<!-- BEGIN auto:season-meta -->
+    <script type="application/json" id="season-meta">
+{"year": 2026}
+    </script>
+<!-- END auto:season-meta -->
+
 <!-- NAV -->
 <header class="nav">
   <div class="wrap nav-inner">
@@ -1270,7 +1276,7 @@
 
     <div class="hero-top">
       <div class="hero-eyebrow mono">
-        <span class="tag">Season 2026</span>
+        <span class="tag">Season <span data-season-year>2026</span></span>
         <span class="sep">//</span>
         <span>Triangle HS Hockey League</span>
         <span class="sep">//</span>
@@ -1287,7 +1293,7 @@
 
     <h1 class="hero-title display rise rise-1">
       <span class="line">Fayetteville</span>
-      <span class="line line-2">Foxes<span class="slash">/</span><span class="numeral">26</span></span>
+      <span class="line line-2">Foxes<span class="slash">/</span><span class="numeral" data-season-yy>26</span></span>
     </h1>
 
     <div class="hero-lower rise rise-2">
@@ -1772,7 +1778,7 @@
     </div>
 
     <!-- Standings -->
-    <div class="stats-subhead" id="standings">League Standings · 2026</div>
+    <div class="stats-subhead" id="standings">League Standings · <span data-season-year>2026</span></div>
     <div class="stats-table standings">
       <div class="stats-row stats-head">
         <span>RK</span>
@@ -2007,7 +2013,7 @@
       </div>
     </div>
     <div class="foot-bottom">
-      <span>© 2026 Fayetteville Foxes Hockey</span>
+      <span>© <span data-season-year>2026</span> Fayetteville Foxes Hockey</span>
       <span class="seal">// Cunning. Ferocious. Unrelenting.</span>
       <span class="ver">Brand System v1.0 · Built on the Ice</span>
     </div>
@@ -2524,6 +2530,19 @@
     }
     tick();
     if (Date.now() < targetMs) timer = setInterval(tick, 1000);
+  })();
+
+  // Stamp the season year from the embedded season-meta JSON into hooks.
+  // Works on the live page and on every frozen archive (each carries its own
+  // season-meta), so no hardcoded year drifts out of date.
+  (function(){
+    let year = null;
+    const el = document.getElementById('season-meta');
+    if (el) { try { year = JSON.parse(el.textContent).year; } catch (_) {} }
+    if (year == null) return;
+    document.querySelectorAll('[data-season-year]').forEach(n => { n.textContent = String(year); });
+    const yy = String(year % 100).padStart(2, '0');
+    document.querySelectorAll('[data-season-yy]').forEach(n => { n.textContent = yy; });
   })();
 
   // Season-complete override. When the daily updater detects a league champion
